@@ -312,19 +312,18 @@ export default function TargetingPage() {
                   const isFinal = i === funnel.length - 1;
                   return (
                     <div key={i} className="group">
-                      <div className="flex items-center gap-4 mb-1">
-                        <span className={`text-xs font-medium w-48 truncate ${isStart ? "text-[#1A2534]" : isFinal ? "text-emerald-700" : "text-[#4B5563]"}`}>
+                      <div className="flex flex-col items-center gap-1 mb-2">
+                        <span className={`text-xs font-medium ${isStart ? "text-[#1A2534]" : isFinal ? "text-emerald-700" : "text-[#4B5563]"}`}>
                           {isStart ? "" : `${i}. `}{step.name}
                         </span>
-                        <div className="flex-1 relative">
-                          <div className="h-8 rounded-lg overflow-hidden bg-[#F0EBF5]">
+                        <div className="w-full max-w-xl">
+                          <div className="h-8 rounded-lg overflow-hidden bg-[#F0EBF5] mx-auto" style={{ width: `${widthPct}%` }}>
                             <div
-                              className={`h-full rounded-lg transition-all ${isFinal ? "bg-gradient-to-r from-emerald-500 to-emerald-400" : isStart ? "bg-gradient-to-r from-[#5A3A76] to-[#8D5EAD]" : "bg-gradient-to-r from-[#5A3A76]/70 to-[#8D5EAD]/70"}`}
-                              style={{ width: `${widthPct}%` }}
+                              className={`h-full rounded-lg ${isFinal ? "bg-gradient-to-r from-emerald-500 to-emerald-400" : isStart ? "bg-gradient-to-r from-[#5A3A76] to-[#8D5EAD]" : "bg-gradient-to-r from-[#5A3A76]/70 to-[#8D5EAD]/70"}`}
                             />
                           </div>
                         </div>
-                        <div className="flex items-center gap-4 text-xs w-80 shrink-0">
+                        <div className="flex items-center justify-center gap-4 text-xs">
                           <span className={`font-bold ${isFinal ? "text-emerald-700" : "text-[#1A2534]"}`}>{fmt(step.total)}</span>
                           <span className="text-[#7C89A6]">A: {fmt(step.adults)}</span>
                           <span className="text-[#7C89A6]">C: {fmt(step.children)}</span>
