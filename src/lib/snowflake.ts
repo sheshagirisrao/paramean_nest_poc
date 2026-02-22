@@ -3,13 +3,8 @@ import snowflake from "snowflake-sdk";
 snowflake.configure({ logLevel: "ERROR" });
 
 let dbInitialized = false;
-let cachedConnection: snowflake.Connection | null = null;
 
 async function getConnection(): Promise<snowflake.Connection> {
-  if (cachedConnection?.isUp()) {
-    return cachedConnection;
-  }
-
   const conn = snowflake.createConnection({
     account: process.env.SNOWFLAKE_ACCOUNT!,
     username: process.env.SNOWFLAKE_USERNAME!,
@@ -17,13 +12,10 @@ async function getConnection(): Promise<snowflake.Connection> {
     database: process.env.SNOWFLAKE_DATABASE!,
     schema: process.env.SNOWFLAKE_SCHEMA!,
     warehouse: process.env.SNOWFLAKE_WAREHOUSE!,
-    clientSessionKeepAlive: true,
   });
 
-  // connectAsync returns a Promise when called without callback
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (conn as any).connectAsync();
-  cachedConnection = conn;
   return conn;
 }
 
@@ -79,7 +71,11 @@ export async function query<T = Record<string, unknown>>(
   binds: snowflake.Binds = []
 ): Promise<T[]> {
   const conn = await getConnection();
-  await ensureTablesExist(conn);
-  const rows = await execStatement(conn, sqlText, binds);
-  return rows as T[];
+  try {
+    await ensureTablesExist(conn);
+    const rows = await execStatement(conn, sqlText, binds);
+    return rows as T[];
+  } finally {
+    conn.destroy(() => {});
+  }
 }
