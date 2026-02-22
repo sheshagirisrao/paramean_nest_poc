@@ -4,19 +4,22 @@ snowflake.configure({ logLevel: "ERROR" });
 
 let dbInitialized = false;
 
-async function getConnection(): Promise<snowflake.Connection> {
-  const conn = snowflake.createConnection({
-    account: process.env.SNOWFLAKE_ACCOUNT!,
-    username: process.env.SNOWFLAKE_USERNAME!,
-    password: process.env.SNOWFLAKE_PASSWORD!,
-    database: process.env.SNOWFLAKE_DATABASE!,
-    schema: process.env.SNOWFLAKE_SCHEMA!,
-    warehouse: process.env.SNOWFLAKE_WAREHOUSE!,
-  });
+function getConnection(): Promise<snowflake.Connection> {
+  return new Promise((resolve, reject) => {
+    const conn = snowflake.createConnection({
+      account: process.env.SNOWFLAKE_ACCOUNT!,
+      username: process.env.SNOWFLAKE_USERNAME!,
+      password: process.env.SNOWFLAKE_PASSWORD!,
+      database: process.env.SNOWFLAKE_DATABASE!,
+      schema: process.env.SNOWFLAKE_SCHEMA!,
+      warehouse: process.env.SNOWFLAKE_WAREHOUSE!,
+    });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (conn as any).connectAsync();
-  return conn;
+    conn.connect((err, c) => {
+      if (err) reject(err);
+      else resolve(c);
+    });
+  });
 }
 
 function execStatement(
