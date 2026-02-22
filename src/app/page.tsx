@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface Member {
   id: number;
@@ -124,6 +125,14 @@ export default function Home() {
               </svg>
             </div>
             <h1 className="text-xl font-semibold text-white tracking-tight">Paramean Nest</h1>
+            <nav className="ml-8 flex items-center gap-1">
+              <Link href="/" className="px-3 py-1.5 text-sm text-white bg-white/15 rounded-lg">
+                Nest Criteria
+              </Link>
+              <Link href="/reporting" className="px-3 py-1.5 text-sm text-white/60 hover:text-white rounded-lg hover:bg-white/10 transition-all">
+                Reporting
+              </Link>
+            </nav>
           </div>
           <button
             onClick={logout}
