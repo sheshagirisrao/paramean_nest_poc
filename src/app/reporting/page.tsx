@@ -68,12 +68,18 @@ function buildQuery(filters: Filters): string {
   return p.toString();
 }
 
-function fmt(n: number, decimals = 0): string {
+function fmt(n: number | null | undefined, decimals = 0): string {
+  if (n == null) return "0";
   return n.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
-function fmtCurrency(n: number, decimals = 0): string {
+function fmtCurrency(n: number | null | undefined, decimals = 0): string {
   return "$" + fmt(n, decimals);
+}
+
+function pct(num: number | null | undefined, den: number | null | undefined): string {
+  if (!num || !den) return "0.0%";
+  return fmt((num / den) * 100, 1) + "%";
 }
 
 function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
@@ -296,14 +302,14 @@ export default function ReportingPage() {
               <KpiCard label="Total Member Months" value={fmt(summary.TOTAL_MM)} />
               <KpiCard label="Total Paid" value={fmtCurrency(summary.TOTAL_PAID)} />
               <KpiCard label="Avg PMPM" value={fmtCurrency(summary.AVG_PMPM, 2)} />
-              <KpiCard label="PCP Visits" value={fmt(summary.PCP_VISITS)} sub={`${fmt((summary.PCP_VISITS / summary.TOTAL_MEMBERS) * 100, 1)}% of members`} />
+              <KpiCard label="PCP Visits" value={fmt(summary.PCP_VISITS)} sub={`${pct(summary.PCP_VISITS, summary.TOTAL_MEMBERS)} of members`} />
             </div>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <KpiCard label="Behavioral Health" value={fmt(summary.BH_MEMBERS)} sub={`${fmt((summary.BH_MEMBERS / summary.TOTAL_MEMBERS) * 100, 1)}%`} />
-              <KpiCard label="ED Visits" value={fmt(summary.ED_MEMBERS)} sub={`${fmt((summary.ED_MEMBERS / summary.TOTAL_MEMBERS) * 100, 1)}%`} />
-              <KpiCard label="Inpatient" value={fmt(summary.IPT_MEMBERS)} sub={`${fmt((summary.IPT_MEMBERS / summary.TOTAL_MEMBERS) * 100, 1)}%`} />
-              <KpiCard label="Pregnancy" value={fmt(summary.PREG_MEMBERS)} sub={`${fmt((summary.PREG_MEMBERS / summary.TOTAL_MEMBERS) * 100, 1)}%`} />
-              <KpiCard label="Exclusions" value={fmt(summary.EXCLUSIONS)} sub={`${fmt((summary.EXCLUSIONS / summary.TOTAL_MEMBERS) * 100, 1)}%`} />
+              <KpiCard label="Behavioral Health" value={fmt(summary.BH_MEMBERS)} sub={pct(summary.BH_MEMBERS, summary.TOTAL_MEMBERS)} />
+              <KpiCard label="ED Visits" value={fmt(summary.ED_MEMBERS)} sub={pct(summary.ED_MEMBERS, summary.TOTAL_MEMBERS)} />
+              <KpiCard label="Inpatient" value={fmt(summary.IPT_MEMBERS)} sub={pct(summary.IPT_MEMBERS, summary.TOTAL_MEMBERS)} />
+              <KpiCard label="Pregnancy" value={fmt(summary.PREG_MEMBERS)} sub={pct(summary.PREG_MEMBERS, summary.TOTAL_MEMBERS)} />
+              <KpiCard label="Exclusions" value={fmt(summary.EXCLUSIONS)} sub={pct(summary.EXCLUSIONS, summary.TOTAL_MEMBERS)} />
             </div>
 
             {/* Breakdown Tables */}
