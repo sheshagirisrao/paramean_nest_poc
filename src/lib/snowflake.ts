@@ -1,18 +1,36 @@
 import snowflake from "snowflake-sdk";
 
-snowflake.configure({ logLevel: "ERROR" });
+snowflake.configure({ logLevel: "ERROR", keepAlive: true });
 
 let dbInitialized = false;
+let cachedConnection: snowflake.Connection | null = null;
 
-function getConnection(): snowflake.Connection {
-  return snowflake.createConnection({
+function connectAsync(conn: snowflake.Connection): Promise<snowflake.Connection> {
+  return new Promise((resolve, reject) => {
+    conn.connectAsync((err, c) => {
+      if (err) reject(err);
+      else resolve(c);
+    });
+  });
+}
+
+async function getConnection(): Promise<snowflake.Connection> {
+  if (cachedConnection?.isUp()) {
+    return cachedConnection;
+  }
+
+  const conn = snowflake.createConnection({
     account: process.env.SNOWFLAKE_ACCOUNT!,
     username: process.env.SNOWFLAKE_USERNAME!,
     password: process.env.SNOWFLAKE_PASSWORD!,
     database: process.env.SNOWFLAKE_DATABASE!,
     schema: process.env.SNOWFLAKE_SCHEMA!,
     warehouse: process.env.SNOWFLAKE_WAREHOUSE!,
+    clientSessionKeepAlive: true,
   });
+
+  cachedConnection = await connectAsync(conn);
+  return cachedConnection;
 }
 
 function execStatement(
@@ -62,39 +80,12 @@ async function ensureTablesExist(conn: snowflake.Connection) {
   dbInitialized = true;
 }
 
-export async function queryBatch<T = Record<string, unknown>>(
-  statements: { sql: string; binds?: snowflake.Binds }[]
-): Promise<T[][]> {
-  const conn = getConnection();
-
-  return new Promise((resolve, reject) => {
-    conn.connect(async (err) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-
-      try {
-        await ensureTablesExist(conn);
-        const results: T[][] = [];
-        for (const stmt of statements) {
-          const rows = await execStatement(conn, stmt.sql, stmt.binds ?? []);
-          results.push(rows as T[]);
-        }
-        conn.destroy(() => {});
-        resolve(results);
-      } catch (e) {
-        conn.destroy(() => {});
-        reject(e);
-      }
-    });
-  });
-}
-
 export async function query<T = Record<string, unknown>>(
   sqlText: string,
   binds: snowflake.Binds = []
 ): Promise<T[]> {
-  const results = await queryBatch<T>([{ sql: sqlText, binds }]);
-  return results[0];
+  const conn = await getConnection();
+  await ensureTablesExist(conn);
+  const rows = await execStatement(conn, sqlText, binds);
+  return rows as T[];
 }
