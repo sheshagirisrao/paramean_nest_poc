@@ -20,6 +20,36 @@ interface FunnelStep {
   cumulExclPct: number;
 }
 
+interface OutputTable {
+  beforeFamilyDef: {
+    totalAnchorsAdults: number;
+    totalAnchorsChildren: number;
+    totalNonAnchorsAdults: number;
+    totalNonAnchorsChildren: number;
+    totalNestAdults: number;
+    totalNestChildren: number;
+  };
+  familyDefinition: {
+    adultAnchorHrp: number;
+    childAnchor: number;
+    otherAdultGt2: number;
+    adultSingleExcl: number;
+    anchorsLostAdults: number;
+    anchorsLostChildren: number;
+    anchorsLostPct: number;
+    remainingAdults: number;
+    remainingChildren: number;
+  };
+  afterFamilyDef: {
+    totalAnchorsAdults: number;
+    totalAnchorsChildren: number;
+    totalNonAnchorsAdults: number;
+    totalNonAnchorsChildren: number;
+    totalNestAdults: number;
+    totalNestChildren: number;
+  };
+}
+
 interface CriteriaInput {
   pmpmMinAdult: number;
   pmpmMaxAdult: number;
@@ -66,6 +96,7 @@ export default function TargetingPage() {
   const router = useRouter();
   const [criteria, setCriteria] = useState<CriteriaInput>(DEFAULT_CRITERIA);
   const [funnel, setFunnel] = useState<FunnelStep[]>([]);
+  const [outputTable, setOutputTable] = useState<OutputTable | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [hasRun, setHasRun] = useState(false);
@@ -82,6 +113,7 @@ export default function TargetingPage() {
       if (!res.ok) throw new Error("Failed to run analysis");
       const data = await res.json();
       setFunnel(data.funnel ?? []);
+      setOutputTable(data.outputTable ?? null);
       setHasRun(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Analysis failed");
@@ -320,18 +352,18 @@ export default function TargetingPage() {
                   <thead>
                     <tr className="border-b border-[#E8E0F0]">
                       <th className="px-4 py-3 text-left font-semibold text-[#7C89A6] uppercase">Step</th>
-                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Adults</th>
-                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Children</th>
-                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Total</th>
-                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Excluded</th>
-                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Excl %</th>
-                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Cumul Excl %</th>
-                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Adult MM</th>
-                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Child MM</th>
-                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Adult PMPM</th>
-                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Child PMPM</th>
-                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Adult Paid</th>
-                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Child Paid</th>
+                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Adults</th>
+                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Children</th>
+                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Total</th>
+                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Excluded</th>
+                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Excl %</th>
+                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Cumul Excl %</th>
+                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Adult MM</th>
+                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Child MM</th>
+                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Adult PMPM</th>
+                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Child PMPM</th>
+                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Adult Paid</th>
+                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Child Paid</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#F0EBF5]">
@@ -343,18 +375,18 @@ export default function TargetingPage() {
                           <td className={`px-4 py-2.5 font-medium whitespace-nowrap ${isFinal ? "text-emerald-700" : "text-[#1A2534]"}`}>
                             {isStart ? step.name : `${i}. ${step.name}`}
                           </td>
-                          <td className="px-4 py-2.5 text-right font-mono">{fmt(step.adults)}</td>
-                          <td className="px-4 py-2.5 text-right font-mono">{fmt(step.children)}</td>
-                          <td className={`px-4 py-2.5 text-right font-mono font-bold ${isFinal ? "text-emerald-700" : ""}`}>{fmt(step.total)}</td>
-                          <td className="px-4 py-2.5 text-right font-mono text-red-500">{isStart ? "—" : `-${fmt(step.excluded)}`}</td>
-                          <td className="px-4 py-2.5 text-right">{isStart ? "—" : pct(step.excludedPct)}</td>
-                          <td className="px-4 py-2.5 text-right">{isStart ? "—" : pct(step.cumulExclPct)}</td>
-                          <td className="px-4 py-2.5 text-right font-mono">{fmt(step.adultMM)}</td>
-                          <td className="px-4 py-2.5 text-right font-mono">{fmt(step.childMM)}</td>
-                          <td className="px-4 py-2.5 text-right font-mono">{fmtCurrency(step.adultPmpm, 2)}</td>
-                          <td className="px-4 py-2.5 text-right font-mono">{fmtCurrency(step.childPmpm, 2)}</td>
-                          <td className="px-4 py-2.5 text-right font-mono">{fmtCurrency(step.adultPaid)}</td>
-                          <td className="px-4 py-2.5 text-right font-mono">{fmtCurrency(step.childPaid)}</td>
+                          <td className="px-4 py-2.5 text-center font-mono">{fmt(step.adults)}</td>
+                          <td className="px-4 py-2.5 text-center font-mono">{fmt(step.children)}</td>
+                          <td className={`px-4 py-2.5 text-center font-mono font-bold ${isFinal ? "text-emerald-700" : ""}`}>{fmt(step.total)}</td>
+                          <td className="px-4 py-2.5 text-center font-mono text-red-500">{isStart ? "—" : `-${fmt(step.excluded)}`}</td>
+                          <td className="px-4 py-2.5 text-center">{isStart ? "—" : pct(step.excludedPct)}</td>
+                          <td className="px-4 py-2.5 text-center">{isStart ? "—" : pct(step.cumulExclPct)}</td>
+                          <td className="px-4 py-2.5 text-center font-mono">{fmt(step.adultMM)}</td>
+                          <td className="px-4 py-2.5 text-center font-mono">{fmt(step.childMM)}</td>
+                          <td className="px-4 py-2.5 text-center font-mono">{fmtCurrency(step.adultPmpm, 2)}</td>
+                          <td className="px-4 py-2.5 text-center font-mono">{fmtCurrency(step.childPmpm, 2)}</td>
+                          <td className="px-4 py-2.5 text-center font-mono">{fmtCurrency(step.adultPaid)}</td>
+                          <td className="px-4 py-2.5 text-center font-mono">{fmtCurrency(step.childPaid)}</td>
                         </tr>
                       );
                     })}
@@ -362,6 +394,117 @@ export default function TargetingPage() {
                 </table>
               </div>
             </div>
+
+            {/* Output Table */}
+            {outputTable && (
+              <div className="bg-white rounded-xl shadow-sm border border-[#E8E0F0] overflow-hidden">
+                <div className="px-6 py-4 bg-gradient-to-r from-[#5A3A76]/5 to-[#8D5EAD]/5 border-b border-[#E8E0F0]">
+                  <h2 className="text-base font-semibold text-[#1A2534]">Output Table</h2>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-[#E8E0F0]">
+                        <th className="px-6 py-3 text-left font-semibold text-[#7C89A6] uppercase text-xs tracking-wider w-80"></th>
+                        <th className="px-6 py-3 text-center font-semibold text-[#7C89A6] uppercase text-xs tracking-wider">Adults</th>
+                        <th className="px-6 py-3 text-center font-semibold text-[#7C89A6] uppercase text-xs tracking-wider">Children</th>
+                        <th className="px-6 py-3 text-center font-semibold text-[#7C89A6] uppercase text-xs tracking-wider">All</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {/* Before Family Definition */}
+                      <tr className="bg-[#5A3A76]/[0.04]">
+                        <td colSpan={4} className="px-6 py-2.5 font-bold text-[#1A2534] text-sm">Before Family Definition</td>
+                      </tr>
+                      <tr className="border-b border-[#F0EBF5]">
+                        <td className="px-6 py-2 text-[#4B5563] pl-10">Total Anchors</td>
+                        <td className="px-6 py-2 text-center font-mono text-[#5A3A76] font-semibold">{fmt(outputTable.beforeFamilyDef.totalAnchorsAdults)}</td>
+                        <td className="px-6 py-2 text-center font-mono text-[#5A3A76] font-semibold">{fmt(outputTable.beforeFamilyDef.totalAnchorsChildren)}</td>
+                        <td className="px-6 py-2 text-center font-mono font-semibold">{fmt(outputTable.beforeFamilyDef.totalAnchorsAdults + outputTable.beforeFamilyDef.totalAnchorsChildren)}</td>
+                      </tr>
+                      <tr className="border-b border-[#F0EBF5]">
+                        <td className="px-6 py-2 text-[#4B5563] pl-10">Total Non-Anchors</td>
+                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.beforeFamilyDef.totalNonAnchorsAdults)}</td>
+                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.beforeFamilyDef.totalNonAnchorsChildren)}</td>
+                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.beforeFamilyDef.totalNonAnchorsAdults + outputTable.beforeFamilyDef.totalNonAnchorsChildren)}</td>
+                      </tr>
+                      <tr className="border-b-2 border-[#E8E0F0] bg-[#5A3A76]/[0.02]">
+                        <td className="px-6 py-2.5 font-bold text-[#1A2534]">Total Nest Members</td>
+                        <td className="px-6 py-2.5 text-center font-mono font-bold text-[#1A2534]">{fmt(outputTable.beforeFamilyDef.totalNestAdults)}</td>
+                        <td className="px-6 py-2.5 text-center font-mono font-bold text-[#1A2534]">{fmt(outputTable.beforeFamilyDef.totalNestChildren)}</td>
+                        <td className="px-6 py-2.5 text-center font-mono font-bold text-[#1A2534]">{fmt(outputTable.beforeFamilyDef.totalNestAdults + outputTable.beforeFamilyDef.totalNestChildren)}</td>
+                      </tr>
+
+                      {/* Family Definition Details */}
+                      <tr><td colSpan={4} className="py-2"></td></tr>
+                      <tr className="border-b border-[#F0EBF5]">
+                        <td className="px-6 py-2 text-[#4B5563] pl-10">Adult Anchor w HRP (&gt;1)</td>
+                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.familyDefinition.adultAnchorHrp)}</td>
+                        <td className="px-6 py-2 text-center font-mono">0</td>
+                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.familyDefinition.adultAnchorHrp)}</td>
+                      </tr>
+                      <tr className="border-b border-[#F0EBF5]">
+                        <td className="px-6 py-2 text-[#4B5563] pl-10">Child Anchor (&gt;1)</td>
+                        <td className="px-6 py-2 text-center font-mono">0</td>
+                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.familyDefinition.childAnchor)}</td>
+                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.familyDefinition.childAnchor)}</td>
+                      </tr>
+                      <tr className="border-b border-[#F0EBF5]">
+                        <td className="px-6 py-2 text-[#4B5563] pl-10">Other Adult Anchor (&gt;2)</td>
+                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.familyDefinition.otherAdultGt2)}</td>
+                        <td className="px-6 py-2 text-center font-mono">0</td>
+                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.familyDefinition.otherAdultGt2)}</td>
+                      </tr>
+                      <tr className="border-b border-[#F0EBF5]">
+                        <td className="px-6 py-2 text-[#4B5563] pl-10">Other Adult Anchor (1) Excluded</td>
+                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.familyDefinition.adultSingleExcl)}</td>
+                        <td className="px-6 py-2 text-center font-mono">0</td>
+                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.familyDefinition.adultSingleExcl)}</td>
+                      </tr>
+                      <tr className="border-b border-[#F0EBF5] bg-red-50/50">
+                        <td className="px-6 py-2 text-red-600 font-medium pl-16">Family Definition (Anchors Lost)</td>
+                        <td className="px-6 py-2 text-center font-mono text-red-600 font-semibold">{fmt(outputTable.familyDefinition.anchorsLostAdults)}</td>
+                        <td className="px-6 py-2 text-center font-mono text-red-600">{fmt(outputTable.familyDefinition.anchorsLostChildren)}</td>
+                        <td className="px-6 py-2 text-center font-mono text-red-600 font-semibold">
+                          {fmt(outputTable.familyDefinition.anchorsLostAdults + outputTable.familyDefinition.anchorsLostChildren)}
+                          <span className="ml-2 text-xs">({pct(outputTable.familyDefinition.anchorsLostPct)} of Anchors Lost)</span>
+                        </td>
+                      </tr>
+                      <tr className="border-b-2 border-[#E8E0F0]">
+                        <td className="px-6 py-2 text-[#4B5563] italic pl-16">Remaining</td>
+                        <td className="px-6 py-2 text-center font-mono italic">{fmt(outputTable.familyDefinition.remainingAdults)}</td>
+                        <td className="px-6 py-2 text-center font-mono italic">{fmt(outputTable.familyDefinition.remainingChildren)}</td>
+                        <td className="px-6 py-2 text-center font-mono italic">{fmt(outputTable.familyDefinition.remainingAdults + outputTable.familyDefinition.remainingChildren)}</td>
+                      </tr>
+
+                      {/* After Family Definition */}
+                      <tr><td colSpan={4} className="py-2"></td></tr>
+                      <tr className="bg-[#5A3A76]/[0.04]">
+                        <td colSpan={4} className="px-6 py-2.5 font-bold text-[#1A2534] text-sm">After Family Definition</td>
+                      </tr>
+                      <tr className="border-b border-[#F0EBF5]">
+                        <td className="px-6 py-2 text-[#4B5563] pl-10 font-semibold">Total Anchors</td>
+                        <td className="px-6 py-2 text-center font-mono text-[#5A3A76] font-semibold">{fmt(outputTable.afterFamilyDef.totalAnchorsAdults)}</td>
+                        <td className="px-6 py-2 text-center font-mono text-[#5A3A76] font-semibold">{fmt(outputTable.afterFamilyDef.totalAnchorsChildren)}</td>
+                        <td className="px-6 py-2 text-center font-mono font-semibold">{fmt(outputTable.afterFamilyDef.totalAnchorsAdults + outputTable.afterFamilyDef.totalAnchorsChildren)}</td>
+                      </tr>
+                      <tr className="border-b border-[#F0EBF5]">
+                        <td className="px-6 py-2 text-[#4B5563] pl-10 font-semibold">Total Non-Anchors</td>
+                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.afterFamilyDef.totalNonAnchorsAdults)}</td>
+                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.afterFamilyDef.totalNonAnchorsChildren)}</td>
+                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.afterFamilyDef.totalNonAnchorsAdults + outputTable.afterFamilyDef.totalNonAnchorsChildren)}</td>
+                      </tr>
+                      <tr className="bg-emerald-50/70 border-t-2 border-emerald-200">
+                        <td className="px-6 py-3 font-bold text-emerald-700 text-sm">Total Nest Members</td>
+                        <td className="px-6 py-3 text-center font-mono font-bold text-emerald-700 text-base">{fmt(outputTable.afterFamilyDef.totalNestAdults)}</td>
+                        <td className="px-6 py-3 text-center font-mono font-bold text-emerald-700 text-base">{fmt(outputTable.afterFamilyDef.totalNestChildren)}</td>
+                        <td className="px-6 py-3 text-center font-mono font-bold text-emerald-700 text-base">{fmt(outputTable.afterFamilyDef.totalNestAdults + outputTable.afterFamilyDef.totalNestChildren)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </>
         )}
 

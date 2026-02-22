@@ -137,7 +137,100 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ funnel });
+    // --- Output Table queries (use same connection) ---
+    const anchorWhere = cumulative;
+    const outputQueries: { key: string; sql: string }[] = [
+      // Non-anchor children: children NOT matching anchor criteria but in same household as an anchor
+      {
+        key: "nonAnchors",
+        sql: `SELECT COUNT(*) AS CNT FROM ${TABLE} t
+              WHERE t.ADULT_CHILD = 'Child'
+              AND NOT (${anchorWhere})
+              AND t.MEMBER_HEADOFHOUSE IN (
+                SELECT DISTINCT MEMBER_HEADOFHOUSE FROM ${TABLE} WHERE ${anchorWhere}
+              )`,
+      },
+      // Adult anchors with HRP (>1 member in household): adults where HSHLD > 1
+      {
+        key: "adultAnchorHrp",
+        sql: `SELECT COUNT(*) AS CNT FROM ${TABLE}
+              WHERE ADULT_CHILD = 'Adult' AND HSHLD > 1 AND (${anchorWhere})`,
+      },
+      // Child anchors (>1 member in household)
+      {
+        key: "childAnchor",
+        sql: `SELECT COUNT(*) AS CNT FROM ${TABLE}
+              WHERE ADULT_CHILD = 'Child' AND (${anchorWhere})`,
+      },
+      // Other adult anchors (>2 adults in household)
+      {
+        key: "otherAdultGt2",
+        sql: `SELECT COUNT(*) AS CNT FROM ${TABLE}
+              WHERE ADULT_CHILD = 'Adult' AND ADULTS > 1 AND (${anchorWhere})`,
+      },
+      // Adult anchors in single-adult households (ADULTS = 1 but HSHLD = 1) - excluded by family def
+      {
+        key: "adultSingleExcl",
+        sql: `SELECT COUNT(*) AS CNT FROM ${TABLE}
+              WHERE ADULT_CHILD = 'Adult' AND HSHLD = 1 AND (${anchorWhere})`,
+      },
+      // After family def: non-anchor household members (children not anchors but in anchor households, after family def)
+      {
+        key: "afterNonAnchors",
+        sql: `SELECT COUNT(*) AS CNT FROM ${TABLE} t
+              WHERE t.ADULT_CHILD = 'Child'
+              AND NOT (${anchorWhere})
+              AND t.MEMBER_HEADOFHOUSE IN (
+                SELECT DISTINCT MEMBER_HEADOFHOUSE FROM ${TABLE}
+                WHERE (${anchorWhere}) AND HSHLD > 1
+              )`,
+      },
+    ];
+
+    const outputResult = await reportMultiQuery(outputQueries);
+
+    const finalAdults = funnel[funnel.length - 1].adults;
+    const finalChildren = funnel[funnel.length - 1].children;
+    const nonAnchorChildren = (outputResult.nonAnchors[0] as { CNT: number })?.CNT ?? 0;
+    const adultAnchorHrp = (outputResult.adultAnchorHrp[0] as { CNT: number })?.CNT ?? 0;
+    const childAnchor = (outputResult.childAnchor[0] as { CNT: number })?.CNT ?? 0;
+    const otherAdultGt2 = (outputResult.otherAdultGt2[0] as { CNT: number })?.CNT ?? 0;
+    const adultSingleExcl = (outputResult.adultSingleExcl[0] as { CNT: number })?.CNT ?? 0;
+    const anchorsLost = adultSingleExcl;
+    const remainingAdultAnchors = finalAdults - anchorsLost;
+    const afterNonAnchors = (outputResult.afterNonAnchors[0] as { CNT: number })?.CNT ?? 0;
+
+    const outputTable = {
+      beforeFamilyDef: {
+        totalAnchorsAdults: finalAdults,
+        totalAnchorsChildren: finalChildren,
+        totalNonAnchorsAdults: 0,
+        totalNonAnchorsChildren: nonAnchorChildren,
+        totalNestAdults: finalAdults,
+        totalNestChildren: finalChildren + nonAnchorChildren,
+      },
+      familyDefinition: {
+        adultAnchorHrp,
+        childAnchor,
+        otherAdultGt2,
+        adultSingleExcl,
+        anchorsLostAdults: anchorsLost,
+        anchorsLostChildren: 0,
+        anchorsLostPct: finalAdults > 0 ? anchorsLost / finalAdults : 0,
+        remainingAdults: remainingAdultAnchors,
+        remainingChildren: finalChildren,
+      },
+      afterFamilyDef: {
+        totalAnchorsAdults: remainingAdultAnchors,
+        totalAnchorsChildren: finalChildren,
+        totalNonAnchorsAdults: 0,
+        totalNonAnchorsChildren: afterNonAnchors,
+        totalNestAdults: remainingAdultAnchors,
+        totalNestChildren: finalChildren + afterNonAnchors,
+      },
+    };
+
+    return NextResponse.json({ funnel, outputTable });
   } catch (err) {
     console.error("Targeting API error:", err);
     return NextResponse.json({ error: "Failed to run targeting analysis" }, { status: 500 });
