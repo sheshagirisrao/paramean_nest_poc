@@ -1,18 +1,9 @@
 import snowflake from "snowflake-sdk";
 
-snowflake.configure({ logLevel: "ERROR", keepAlive: true });
+snowflake.configure({ logLevel: "ERROR" });
 
 let dbInitialized = false;
 let cachedConnection: snowflake.Connection | null = null;
-
-function connectAsync(conn: snowflake.Connection): Promise<snowflake.Connection> {
-  return new Promise((resolve, reject) => {
-    conn.connectAsync((err, c) => {
-      if (err) reject(err);
-      else resolve(c);
-    });
-  });
-}
 
 async function getConnection(): Promise<snowflake.Connection> {
   if (cachedConnection?.isUp()) {
@@ -29,8 +20,11 @@ async function getConnection(): Promise<snowflake.Connection> {
     clientSessionKeepAlive: true,
   });
 
-  cachedConnection = await connectAsync(conn);
-  return cachedConnection;
+  // connectAsync returns a Promise when called without callback
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (conn as any).connectAsync();
+  cachedConnection = conn;
+  return conn;
 }
 
 function execStatement(
