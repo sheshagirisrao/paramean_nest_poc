@@ -130,39 +130,53 @@ export default function ReportingPage() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [dataLoading, setDataLoading] = useState(false);
+  const [error, setError] = useState("");
   const limit = 50;
 
   const loadAll = useCallback(async (f: Filters, p: number) => {
     setLoading(true);
     setDataLoading(true);
-    const q = buildQuery(f);
-    const [summaryRes, dataRes] = await Promise.all([
-      fetch(`/api/report?mode=summary&${q}`),
-      fetch(`/api/report?mode=data&page=${p}&limit=${limit}&${q}`),
-    ]);
-    const summaryData = await summaryRes.json();
-    setSummary(summaryData.summary);
-    setByGender(summaryData.byGender);
-    setByAge(summaryData.byAge);
-    setByProduct(summaryData.byProduct);
-    setByPmpmGrp(summaryData.byPmpmGrp);
-    setLoading(false);
-    const d = await dataRes.json();
-    setDataRows(d.rows);
-    setTotal(d.total);
-    setPage(d.page);
-    setDataLoading(false);
+    setError("");
+    try {
+      const q = buildQuery(f);
+      const [summaryRes, dataRes] = await Promise.all([
+        fetch(`/api/report?mode=summary&${q}`),
+        fetch(`/api/report?mode=data&page=${p}&limit=${limit}&${q}`),
+      ]);
+      if (!summaryRes.ok || !dataRes.ok) throw new Error("Failed to fetch report data");
+      const summaryData = await summaryRes.json();
+      setSummary(summaryData.summary ?? null);
+      setByGender(summaryData.byGender ?? []);
+      setByAge(summaryData.byAge ?? []);
+      setByProduct(summaryData.byProduct ?? []);
+      setByPmpmGrp(summaryData.byPmpmGrp ?? []);
+      const d = await dataRes.json();
+      setDataRows(d.rows ?? []);
+      setTotal(d.total ?? 0);
+      setPage(d.page ?? 1);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load report");
+    } finally {
+      setLoading(false);
+      setDataLoading(false);
+    }
   }, []);
 
   const loadPage = useCallback(async (f: Filters, p: number) => {
     setDataLoading(true);
-    const q = buildQuery(f);
-    const res = await fetch(`/api/report?mode=data&page=${p}&limit=${limit}&${q}`);
-    const d = await res.json();
-    setDataRows(d.rows);
-    setTotal(d.total);
-    setPage(d.page);
-    setDataLoading(false);
+    try {
+      const q = buildQuery(f);
+      const res = await fetch(`/api/report?mode=data&page=${p}&limit=${limit}&${q}`);
+      if (!res.ok) throw new Error("Failed to fetch data");
+      const d = await res.json();
+      setDataRows(d.rows ?? []);
+      setTotal(d.total ?? 0);
+      setPage(d.page ?? 1);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load data");
+    } finally {
+      setDataLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -262,6 +276,13 @@ export default function ReportingPage() {
             </button>
           </div>
         </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl px-6 py-4">
+            <p className="text-red-600 text-sm font-medium">{error}</p>
+            <button onClick={() => loadAll(filters, 1)} className="mt-2 text-sm text-red-500 underline hover:text-red-700">Retry</button>
+          </div>
+        )}
 
         {/* KPI Cards */}
         {loading ? (

@@ -19,10 +19,7 @@ function execStatement(
   });
 }
 
-export async function reportQuery<T = Record<string, unknown>>(
-  sqlText: string,
-  binds: snowflake.Binds = []
-): Promise<T[]> {
+function createConn(): Promise<snowflake.Connection> {
   const conn = snowflake.createConnection({
     account: process.env.SNOWFLAKE_ACCOUNT!,
     username: process.env.SNOWFLAKE_USERNAME!,
@@ -31,18 +28,35 @@ export async function reportQuery<T = Record<string, unknown>>(
     schema: "PUBLIC",
     warehouse: process.env.SNOWFLAKE_WAREHOUSE!,
   });
-
   return new Promise((resolve, reject) => {
-    conn.connect(async (err) => {
-      if (err) { reject(err); return; }
-      try {
-        const rows = await execStatement(conn, sqlText, binds);
-        resolve(rows as T[]);
-      } catch (e) {
-        reject(e);
-      } finally {
-        conn.destroy(() => {});
-      }
-    });
+    conn.connect((err) => (err ? reject(err) : resolve(conn)));
   });
+}
+
+export async function reportQuery<T = Record<string, unknown>>(
+  sqlText: string,
+  binds: snowflake.Binds = []
+): Promise<T[]> {
+  const conn = await createConn();
+  try {
+    const rows = await execStatement(conn, sqlText, binds);
+    return rows as T[];
+  } finally {
+    conn.destroy(() => {});
+  }
+}
+
+export async function reportMultiQuery(
+  queries: { key: string; sql: string; binds?: snowflake.Binds }[]
+): Promise<Record<string, Record<string, unknown>[]>> {
+  const conn = await createConn();
+  try {
+    const result: Record<string, Record<string, unknown>[]> = {};
+    for (const q of queries) {
+      result[q.key] = await execStatement(conn, q.sql, q.binds ?? []);
+    }
+    return result;
+  } finally {
+    conn.destroy(() => {});
+  }
 }
