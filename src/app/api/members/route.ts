@@ -1,6 +1,7 @@
 import { query } from "@/lib/snowflake";
-import { initDatabase } from "@/lib/init-db";
 import { NextResponse } from "next/server";
+
+export const maxDuration = 30;
 
 interface MemberRow {
   ID: number;
@@ -11,7 +12,6 @@ interface MemberRow {
 }
 
 export async function GET() {
-  await initDatabase();
   const rows = await query<MemberRow>("SELECT * FROM MEMBERS ORDER BY ID ASC");
   const members = rows.map((r) => ({
     id: r.ID,
@@ -29,8 +29,6 @@ export async function POST(request: Request) {
   if (!memberName || !familyName || pmpm === undefined) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
-
-  await initDatabase();
 
   const existing = await query<{ CNT: number }>(
     "SELECT COUNT(*) AS CNT FROM MEMBERS WHERE MEMBER_NAME = ? AND FAMILY_NAME = ? AND PMPM = ?",

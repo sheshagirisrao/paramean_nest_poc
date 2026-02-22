@@ -2,6 +2,8 @@ import snowflake from "snowflake-sdk";
 
 snowflake.configure({ logLevel: "ERROR" });
 
+let dbInitialized = false;
+
 function getConnection(): snowflake.Connection {
   return snowflake.createConnection({
     account: process.env.SNOWFLAKE_ACCOUNT!,
@@ -30,10 +32,39 @@ function execStatement(
   });
 }
 
-export async function query<T = Record<string, unknown>>(
-  sqlText: string,
-  binds: snowflake.Binds = []
-): Promise<T[]> {
+async function ensureTablesExist(conn: snowflake.Connection) {
+  if (dbInitialized) return;
+
+  await execStatement(conn, `
+    CREATE TABLE IF NOT EXISTS MEMBERS (
+      ID INTEGER AUTOINCREMENT PRIMARY KEY,
+      MEMBER_NAME VARCHAR(255) NOT NULL,
+      FAMILY_NAME VARCHAR(255) NOT NULL,
+      PMPM FLOAT NOT NULL,
+      CREATED_AT TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+    )
+  `);
+
+  await execStatement(conn, `
+    CREATE TABLE IF NOT EXISTS SETTINGS (
+      ID INTEGER PRIMARY KEY DEFAULT 1,
+      PMPM_LOWER FLOAT DEFAULT 600,
+      PMPM_UPPER FLOAT DEFAULT 1000
+    )
+  `);
+
+  const existing = await execStatement(conn, "SELECT COUNT(*) AS CNT FROM SETTINGS");
+  const cnt = (existing[0] as { CNT: number })?.CNT ?? 0;
+  if (cnt === 0) {
+    await execStatement(conn, "INSERT INTO SETTINGS (ID, PMPM_LOWER, PMPM_UPPER) VALUES (1, 600, 1000)");
+  }
+
+  dbInitialized = true;
+}
+
+export async function queryBatch<T = Record<string, unknown>>(
+  statements: { sql: string; binds?: snowflake.Binds }[]
+): Promise<T[][]> {
   const conn = getConnection();
 
   return new Promise((resolve, reject) => {
@@ -44,19 +75,26 @@ export async function query<T = Record<string, unknown>>(
       }
 
       try {
-        const db = process.env.SNOWFLAKE_DATABASE!;
-        const schema = process.env.SNOWFLAKE_SCHEMA!;
-        const wh = process.env.SNOWFLAKE_WAREHOUSE!;
-        await execStatement(conn, `USE WAREHOUSE "${wh}"`);
-        await execStatement(conn, `USE DATABASE "${db}"`);
-        await execStatement(conn, `USE SCHEMA "${schema}"`);
-        const rows = await execStatement(conn, sqlText, binds);
+        await ensureTablesExist(conn);
+        const results: T[][] = [];
+        for (const stmt of statements) {
+          const rows = await execStatement(conn, stmt.sql, stmt.binds ?? []);
+          results.push(rows as T[]);
+        }
         conn.destroy(() => {});
-        resolve(rows as T[]);
+        resolve(results);
       } catch (e) {
         conn.destroy(() => {});
         reject(e);
       }
     });
   });
+}
+
+export async function query<T = Record<string, unknown>>(
+  sqlText: string,
+  binds: snowflake.Binds = []
+): Promise<T[]> {
+  const results = await queryBatch<T>([{ sql: sqlText, binds }]);
+  return results[0];
 }
