@@ -132,6 +132,9 @@ export default function Home() {
               <Link href="/reporting" className="px-3 py-1.5 text-sm text-white/60 hover:text-white rounded-lg hover:bg-white/10 transition-all">
                 Reporting
               </Link>
+              <Link href="/targeting" className="px-3 py-1.5 text-sm text-white/60 hover:text-white rounded-lg hover:bg-white/10 transition-all">
+                Targeting
+              </Link>
             </nav>
           </div>
           <button

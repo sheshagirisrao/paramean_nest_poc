@@ -1,0 +1,380 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+
+interface FunnelStep {
+  name: string;
+  adults: number;
+  children: number;
+  total: number;
+  adultMM: number;
+  childMM: number;
+  adultPaid: number;
+  childPaid: number;
+  adultPmpm: number;
+  childPmpm: number;
+  excluded: number;
+  excludedPct: number;
+  cumulExclPct: number;
+}
+
+interface CriteriaInput {
+  pmpmMinAdult: number;
+  pmpmMaxAdult: number;
+  pmpmMinChild: number;
+  pmpmMaxChild: number;
+  excludeNoPcp: boolean;
+  excludeExclusions: boolean;
+  excludeIpt: boolean;
+  excludeEd: boolean;
+  excludeLowMm: boolean;
+  minMmAdult: number;
+  minMmChild: number;
+}
+
+function fmt(n: number | null | undefined, decimals = 0): string {
+  if (n == null) return "0";
+  return n.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+function fmtCurrency(n: number | null | undefined, decimals = 0): string {
+  return "$" + fmt(n, decimals);
+}
+
+function pct(n: number | null | undefined): string {
+  if (n == null) return "0.0%";
+  return fmt(n * 100, 1) + "%";
+}
+
+const DEFAULT_CRITERIA: CriteriaInput = {
+  pmpmMinAdult: 100,
+  pmpmMaxAdult: 5000,
+  pmpmMinChild: 100,
+  pmpmMaxChild: 5000,
+  excludeNoPcp: true,
+  excludeExclusions: true,
+  excludeIpt: true,
+  excludeEd: false,
+  excludeLowMm: true,
+  minMmAdult: 2,
+  minMmChild: 2,
+};
+
+export default function TargetingPage() {
+  const router = useRouter();
+  const [criteria, setCriteria] = useState<CriteriaInput>(DEFAULT_CRITERIA);
+  const [funnel, setFunnel] = useState<FunnelStep[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [hasRun, setHasRun] = useState(false);
+
+  const runAnalysis = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/targeting", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(criteria),
+      });
+      if (!res.ok) throw new Error("Failed to run analysis");
+      const data = await res.json();
+      setFunnel(data.funnel ?? []);
+      setHasRun(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Analysis failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    await fetch("/api/auth", { method: "DELETE" });
+    router.push("/login");
+  };
+
+  const startTotal = funnel.length > 0 ? funnel[0].total : 1;
+  const finalStep = funnel.length > 0 ? funnel[funnel.length - 1] : null;
+
+  return (
+    <div className="min-h-screen bg-[#F7F5FA]">
+      <header className="bg-gradient-to-r from-[#1A2534] via-[#2A1F3D] to-[#5A3A76] shadow-lg">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#8D5EAD] to-[#B18AC7] flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+              </svg>
+            </div>
+            <h1 className="text-xl font-semibold text-white tracking-tight">Paramean Nest</h1>
+            <nav className="ml-8 flex items-center gap-1">
+              <Link href="/" className="px-3 py-1.5 text-sm text-white/60 hover:text-white rounded-lg hover:bg-white/10 transition-all">Nest Criteria</Link>
+              <Link href="/reporting" className="px-3 py-1.5 text-sm text-white/60 hover:text-white rounded-lg hover:bg-white/10 transition-all">Reporting</Link>
+              <Link href="/targeting" className="px-3 py-1.5 text-sm text-white bg-white/15 rounded-lg">Targeting</Link>
+            </nav>
+          </div>
+          <button onClick={logout} className="flex items-center gap-2 px-4 py-2 text-sm text-white/70 hover:text-white border border-white/20 rounded-lg hover:bg-white/10 transition-all">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+            </svg>
+            Logout
+          </button>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+        {/* Criteria Configuration */}
+        <div className="bg-white rounded-xl shadow-sm border border-[#E8E0F0] overflow-hidden">
+          <div className="px-6 py-4 bg-gradient-to-r from-[#5A3A76]/5 to-[#8D5EAD]/5 border-b border-[#E8E0F0]">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-[#5A3A76]/10 flex items-center justify-center">
+                <svg className="w-4 h-4 text-[#5A3A76]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+                </svg>
+              </div>
+              <h2 className="text-base font-semibold text-[#1A2534]">Targeting Criteria</h2>
+              <p className="text-xs text-[#7C89A6] ml-2">Configure filters to narrow down the 215K population to high-value targets</p>
+            </div>
+          </div>
+          <div className="px-6 py-5 space-y-6">
+            {/* PMPM Thresholds */}
+            <div>
+              <h3 className="text-sm font-semibold text-[#1A2534] mb-3">PMPM Threshold</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-[#7C89A6] uppercase tracking-wider mb-1">Adult Min</label>
+                  <input type="number" value={criteria.pmpmMinAdult} onChange={(e) => setCriteria({ ...criteria, pmpmMinAdult: Number(e.target.value) })}
+                    className="border border-[#C2CCE3] rounded-lg px-3 py-2 w-full text-sm text-[#1A2534] focus:outline-none focus:ring-2 focus:ring-[#8D5EAD]/30 focus:border-[#8D5EAD]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#7C89A6] uppercase tracking-wider mb-1">Adult Max</label>
+                  <input type="number" value={criteria.pmpmMaxAdult} onChange={(e) => setCriteria({ ...criteria, pmpmMaxAdult: Number(e.target.value) })}
+                    className="border border-[#C2CCE3] rounded-lg px-3 py-2 w-full text-sm text-[#1A2534] focus:outline-none focus:ring-2 focus:ring-[#8D5EAD]/30 focus:border-[#8D5EAD]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#7C89A6] uppercase tracking-wider mb-1">Child Min</label>
+                  <input type="number" value={criteria.pmpmMinChild} onChange={(e) => setCriteria({ ...criteria, pmpmMinChild: Number(e.target.value) })}
+                    className="border border-[#C2CCE3] rounded-lg px-3 py-2 w-full text-sm text-[#1A2534] focus:outline-none focus:ring-2 focus:ring-[#8D5EAD]/30 focus:border-[#8D5EAD]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#7C89A6] uppercase tracking-wider mb-1">Child Max</label>
+                  <input type="number" value={criteria.pmpmMaxChild} onChange={(e) => setCriteria({ ...criteria, pmpmMaxChild: Number(e.target.value) })}
+                    className="border border-[#C2CCE3] rounded-lg px-3 py-2 w-full text-sm text-[#1A2534] focus:outline-none focus:ring-2 focus:ring-[#8D5EAD]/30 focus:border-[#8D5EAD]" />
+                </div>
+              </div>
+            </div>
+
+            {/* Exclusion Toggles */}
+            <div>
+              <h3 className="text-sm font-semibold text-[#1A2534] mb-3">Exclusion Criteria</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {[
+                  { key: "excludeNoPcp" as const, label: "Exclude No PCP Visits", desc: "Remove members without any PCP visits" },
+                  { key: "excludeExclusions" as const, label: "Exclude Cancer/Transplant", desc: "Remove Cancer, Hemophilia, Transplant cases" },
+                  { key: "excludeIpt" as const, label: "Exclude Inpatient (IPT)", desc: "Remove members with inpatient stays" },
+                  { key: "excludeEd" as const, label: "Exclude ED Visits", desc: "Remove members with emergency dept visits" },
+                  { key: "excludeLowMm" as const, label: "Exclude Low Member Months", desc: "Remove members below minimum months" },
+                ].map(({ key, label, desc }) => (
+                  <label key={key} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${criteria[key] ? "border-[#8D5EAD]/40 bg-[#5A3A76]/[0.03]" : "border-[#E8E0F0] bg-white hover:bg-gray-50"}`}>
+                    <input type="checkbox" checked={criteria[key]} onChange={(e) => setCriteria({ ...criteria, [key]: e.target.checked })}
+                      className="mt-0.5 w-4 h-4 text-[#5A3A76] rounded border-[#C2CCE3] focus:ring-[#8D5EAD]/30" />
+                    <div>
+                      <span className="text-sm font-medium text-[#1A2534]">{label}</span>
+                      <p className="text-xs text-[#7C89A6] mt-0.5">{desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Min Member Months */}
+            {criteria.excludeLowMm && (
+              <div className="flex gap-4 pl-1">
+                <div>
+                  <label className="block text-xs font-medium text-[#7C89A6] uppercase tracking-wider mb-1">Min MM (Adult)</label>
+                  <input type="number" value={criteria.minMmAdult} onChange={(e) => setCriteria({ ...criteria, minMmAdult: Number(e.target.value) })}
+                    className="border border-[#C2CCE3] rounded-lg px-3 py-2 w-28 text-sm text-[#1A2534] focus:outline-none focus:ring-2 focus:ring-[#8D5EAD]/30 focus:border-[#8D5EAD]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#7C89A6] uppercase tracking-wider mb-1">Min MM (Child)</label>
+                  <input type="number" value={criteria.minMmChild} onChange={(e) => setCriteria({ ...criteria, minMmChild: Number(e.target.value) })}
+                    className="border border-[#C2CCE3] rounded-lg px-3 py-2 w-28 text-sm text-[#1A2534] focus:outline-none focus:ring-2 focus:ring-[#8D5EAD]/30 focus:border-[#8D5EAD]" />
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-2">
+              <button onClick={runAnalysis} disabled={loading}
+                className="px-6 py-2.5 bg-gradient-to-r from-[#5A3A76] to-[#8D5EAD] text-white text-sm font-medium rounded-lg hover:from-[#6F4891] hover:to-[#9B6FBB] transition-all shadow-sm disabled:opacity-50">
+                {loading ? "Running Analysis..." : "Run Targeting Analysis"}
+              </button>
+              <button onClick={() => setCriteria(DEFAULT_CRITERIA)}
+                className="px-5 py-2.5 text-sm text-[#7C89A6] border border-[#C2CCE3] rounded-lg hover:bg-gray-50 transition-colors">
+                Reset Defaults
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl px-6 py-4">
+            <p className="text-red-600 text-sm font-medium">{error}</p>
+            <button onClick={runAnalysis} className="mt-2 text-sm text-red-500 underline hover:text-red-700">Retry</button>
+          </div>
+        )}
+
+        {loading && (
+          <div className="flex items-center justify-center py-16">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-10 h-10 border-3 border-[#8D5EAD] border-t-transparent rounded-full animate-spin" />
+              <p className="text-[#7C89A6] text-sm">Running targeting analysis on 215K members...</p>
+            </div>
+          </div>
+        )}
+
+        {hasRun && !loading && funnel.length > 0 && (
+          <>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-white rounded-xl border border-[#E8E0F0] p-5 shadow-sm">
+                <p className="text-xs font-medium text-[#7C89A6] uppercase tracking-wider mb-1">Starting Population</p>
+                <p className="text-2xl font-bold text-[#1A2534]">{fmt(funnel[0].total)}</p>
+              </div>
+              <div className="bg-white rounded-xl border border-emerald-200 p-5 shadow-sm">
+                <p className="text-xs font-medium text-emerald-600 uppercase tracking-wider mb-1">Target Population</p>
+                <p className="text-2xl font-bold text-emerald-700">{fmt(finalStep?.total)}</p>
+                <p className="text-xs text-[#7C89A6] mt-1">{pct(finalStep ? finalStep.total / startTotal : 0)} of total</p>
+              </div>
+              <div className="bg-white rounded-xl border border-[#E8E0F0] p-5 shadow-sm">
+                <p className="text-xs font-medium text-[#7C89A6] uppercase tracking-wider mb-1">Target Adults</p>
+                <p className="text-2xl font-bold text-[#5A3A76]">{fmt(finalStep?.adults)}</p>
+                <p className="text-xs text-[#7C89A6] mt-1">Avg PMPM: {fmtCurrency(finalStep?.adultPmpm, 2)}</p>
+              </div>
+              <div className="bg-white rounded-xl border border-[#E8E0F0] p-5 shadow-sm">
+                <p className="text-xs font-medium text-[#7C89A6] uppercase tracking-wider mb-1">Target Children</p>
+                <p className="text-2xl font-bold text-[#5A3A76]">{fmt(finalStep?.children)}</p>
+                <p className="text-xs text-[#7C89A6] mt-1">Avg PMPM: {fmtCurrency(finalStep?.childPmpm, 2)}</p>
+              </div>
+            </div>
+
+            {/* Funnel Visualization */}
+            <div className="bg-white rounded-xl shadow-sm border border-[#E8E0F0] overflow-hidden">
+              <div className="px-6 py-4 bg-gradient-to-r from-[#5A3A76]/5 to-[#8D5EAD]/5 border-b border-[#E8E0F0]">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#5A3A76]/10 flex items-center justify-center">
+                    <svg className="w-4 h-4 text-[#5A3A76]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-base font-semibold text-[#1A2534]">Targeting Funnel</h2>
+                </div>
+              </div>
+
+              {/* Funnel bars */}
+              <div className="px-6 py-6 space-y-2">
+                {funnel.map((step, i) => {
+                  const widthPct = startTotal > 0 ? Math.max(2, (step.total / startTotal) * 100) : 100;
+                  const isStart = i === 0;
+                  const isFinal = i === funnel.length - 1;
+                  return (
+                    <div key={i} className="group">
+                      <div className="flex items-center gap-4 mb-1">
+                        <span className={`text-xs font-medium w-48 truncate ${isStart ? "text-[#1A2534]" : isFinal ? "text-emerald-700" : "text-[#4B5563]"}`}>
+                          {isStart ? "" : `${i}. `}{step.name}
+                        </span>
+                        <div className="flex-1 relative">
+                          <div className="h-8 rounded-lg overflow-hidden bg-[#F0EBF5]">
+                            <div
+                              className={`h-full rounded-lg transition-all ${isFinal ? "bg-gradient-to-r from-emerald-500 to-emerald-400" : isStart ? "bg-gradient-to-r from-[#5A3A76] to-[#8D5EAD]" : "bg-gradient-to-r from-[#5A3A76]/70 to-[#8D5EAD]/70"}`}
+                              style={{ width: `${widthPct}%` }}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs w-80 shrink-0">
+                          <span className={`font-bold ${isFinal ? "text-emerald-700" : "text-[#1A2534]"}`}>{fmt(step.total)}</span>
+                          <span className="text-[#7C89A6]">A: {fmt(step.adults)}</span>
+                          <span className="text-[#7C89A6]">C: {fmt(step.children)}</span>
+                          {!isStart && (
+                            <span className="text-red-500 font-medium">-{fmt(step.excluded)}</span>
+                          )}
+                          {!isStart && (
+                            <span className="text-[#7C89A6]">({pct(step.cumulExclPct)} excl.)</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Detailed Steps Table */}
+            <div className="bg-white rounded-xl shadow-sm border border-[#E8E0F0] overflow-hidden">
+              <div className="px-6 py-4 bg-gradient-to-r from-[#5A3A76]/5 to-[#8D5EAD]/5 border-b border-[#E8E0F0]">
+                <h2 className="text-base font-semibold text-[#1A2534]">Detailed Funnel Breakdown</h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-[#E8E0F0]">
+                      <th className="px-4 py-3 text-left font-semibold text-[#7C89A6] uppercase">Step</th>
+                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Adults</th>
+                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Children</th>
+                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Total</th>
+                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Excluded</th>
+                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Excl %</th>
+                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Cumul Excl %</th>
+                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Adult MM</th>
+                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Child MM</th>
+                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Adult PMPM</th>
+                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Child PMPM</th>
+                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Adult Paid</th>
+                      <th className="px-4 py-3 text-right font-semibold text-[#7C89A6] uppercase">Child Paid</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#F0EBF5]">
+                    {funnel.map((step, i) => {
+                      const isStart = i === 0;
+                      const isFinal = i === funnel.length - 1;
+                      return (
+                        <tr key={i} className={isFinal ? "bg-emerald-50/50" : isStart ? "bg-[#5A3A76]/[0.02]" : "hover:bg-[#5A3A76]/[0.01]"}>
+                          <td className={`px-4 py-2.5 font-medium whitespace-nowrap ${isFinal ? "text-emerald-700" : "text-[#1A2534]"}`}>
+                            {isStart ? step.name : `${i}. ${step.name}`}
+                          </td>
+                          <td className="px-4 py-2.5 text-right font-mono">{fmt(step.adults)}</td>
+                          <td className="px-4 py-2.5 text-right font-mono">{fmt(step.children)}</td>
+                          <td className={`px-4 py-2.5 text-right font-mono font-bold ${isFinal ? "text-emerald-700" : ""}`}>{fmt(step.total)}</td>
+                          <td className="px-4 py-2.5 text-right font-mono text-red-500">{isStart ? "—" : `-${fmt(step.excluded)}`}</td>
+                          <td className="px-4 py-2.5 text-right">{isStart ? "—" : pct(step.excludedPct)}</td>
+                          <td className="px-4 py-2.5 text-right">{isStart ? "—" : pct(step.cumulExclPct)}</td>
+                          <td className="px-4 py-2.5 text-right font-mono">{fmt(step.adultMM)}</td>
+                          <td className="px-4 py-2.5 text-right font-mono">{fmt(step.childMM)}</td>
+                          <td className="px-4 py-2.5 text-right font-mono">{fmtCurrency(step.adultPmpm, 2)}</td>
+                          <td className="px-4 py-2.5 text-right font-mono">{fmtCurrency(step.childPmpm, 2)}</td>
+                          <td className="px-4 py-2.5 text-right font-mono">{fmtCurrency(step.adultPaid)}</td>
+                          <td className="px-4 py-2.5 text-right font-mono">{fmtCurrency(step.childPaid)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+
+        {hasRun && !loading && funnel.length === 0 && !error && (
+          <div className="bg-white rounded-xl border border-[#E8E0F0] p-12 text-center">
+            <p className="text-[#7C89A6]">No results returned. Try adjusting your criteria.</p>
+          </div>
+        )}
+      </main>
+
+      <footer className="mt-8 py-4 text-center">
+        <p className="text-xs text-[#7C89A6]/50">Powered by Paramean Solutions</p>
+      </footer>
+    </div>
+  );
+}
