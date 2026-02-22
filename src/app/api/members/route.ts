@@ -1,4 +1,5 @@
 import { query } from "@/lib/snowflake";
+import { recalculateAll } from "@/lib/recalculate";
 import { NextResponse } from "next/server";
 
 export const maxDuration = 30;
@@ -8,7 +9,10 @@ interface MemberRow {
   MEMBER_NAME: string;
   FAMILY_NAME: string;
   PMPM: number;
-  CREATED_AT: string;
+  PMPM_ELIGIBLE: number;
+  ANCHOR: number;
+  FAMILY_ELIGIBLE: number;
+  ELIGIBLE: number;
 }
 
 export async function GET() {
@@ -18,6 +22,10 @@ export async function GET() {
     memberName: r.MEMBER_NAME,
     familyName: r.FAMILY_NAME,
     pmpm: r.PMPM,
+    pmpmEligible: r.PMPM_ELIGIBLE ?? 0,
+    anchor: r.ANCHOR ?? 0,
+    familyEligible: r.FAMILY_ELIGIBLE ?? 0,
+    eligible: r.ELIGIBLE ?? 0,
   }));
   return NextResponse.json(members);
 }
@@ -46,6 +54,7 @@ export async function POST(request: Request) {
     [memberName, familyName, Number(pmpm)]
   );
 
+  await recalculateAll();
   return NextResponse.json({ success: true }, { status: 201 });
 }
 
@@ -58,5 +67,6 @@ export async function DELETE(request: Request) {
   }
 
   await query("DELETE FROM MEMBERS WHERE ID = ?", [Number(id)]);
+  await recalculateAll();
   return NextResponse.json({ success: true });
 }

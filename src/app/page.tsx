@@ -8,37 +8,15 @@ interface Member {
   memberName: string;
   familyName: string;
   pmpm: number;
-}
-
-interface Settings {
-  pmpmLower: number;
-  pmpmUpper: number;
-}
-
-interface ComputedRow extends Member {
   pmpmEligible: number;
   anchor: number;
   familyEligible: number;
   eligible: number;
 }
 
-function computeRows(members: Member[], settings: Settings): ComputedRow[] {
-  const rows = members.map((m) => {
-    const pmpmEligible = m.pmpm >= settings.pmpmLower && m.pmpm <= settings.pmpmUpper ? 1 : 0;
-    return { ...m, pmpmEligible, anchor: pmpmEligible, familyEligible: 0, eligible: 0 };
-  });
-
-  const familyHasAnchor: Record<string, boolean> = {};
-  for (const r of rows) {
-    if (r.anchor === 1) familyHasAnchor[r.familyName] = true;
-  }
-
-  for (const r of rows) {
-    r.familyEligible = familyHasAnchor[r.familyName] ? 1 : 0;
-    r.eligible = r.familyEligible;
-  }
-
-  return rows;
+interface Settings {
+  pmpmLower: number;
+  pmpmUpper: number;
 }
 
 async function fetchMembers(): Promise<Member[]> {
@@ -115,14 +93,13 @@ export default function Home() {
     });
     setSettings(tempSettings);
     setEditingSettings(false);
+    refreshData();
   };
 
   const logout = async () => {
     await fetch("/api/auth", { method: "DELETE" });
     router.push("/login");
   };
-
-  const computedRows = computeRows(members, settings);
 
   if (loading) {
     return (
@@ -305,7 +282,7 @@ export default function Home() {
               <h2 className="text-base font-semibold text-[#1A2534]">Nest Criteria</h2>
             </div>
             <span className="text-xs font-medium text-[#7C89A6] bg-[#5A3A76]/5 px-3 py-1 rounded-full">
-              {computedRows.length} member{computedRows.length !== 1 ? "s" : ""}
+              {members.length} member{members.length !== 1 ? "s" : ""}
             </span>
           </div>
           <div className="overflow-x-auto">
@@ -323,7 +300,7 @@ export default function Home() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F0EBF5]">
-                {computedRows.length === 0 ? (
+                {members.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center gap-2">
@@ -338,7 +315,7 @@ export default function Home() {
                     </td>
                   </tr>
                 ) : (
-                  computedRows.map((row) => (
+                  members.map((row) => (
                     <tr key={row.id} className="hover:bg-[#5A3A76]/[0.02] transition-colors">
                       <td className="px-6 py-3.5 text-sm font-medium text-[#1A2534]">{row.memberName}</td>
                       <td className="px-6 py-3.5 text-sm text-[#4B5563]">{row.familyName}</td>

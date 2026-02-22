@@ -1,4 +1,5 @@
 import { query } from "@/lib/snowflake";
+import { recalculateAll } from "@/lib/recalculate";
 import { NextResponse } from "next/server";
 
 export const maxDuration = 30;
@@ -27,5 +28,6 @@ export async function PUT(request: Request) {
     [Number(pmpmLower), Number(pmpmUpper)]
   );
 
+  await recalculateAll();
   return NextResponse.json({ pmpmLower: Number(pmpmLower), pmpmUpper: Number(pmpmUpper) });
 }

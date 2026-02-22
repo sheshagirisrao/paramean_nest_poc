@@ -48,9 +48,22 @@ async function ensureTablesExist(conn: snowflake.Connection) {
       MEMBER_NAME VARCHAR(255) NOT NULL,
       FAMILY_NAME VARCHAR(255) NOT NULL,
       PMPM FLOAT NOT NULL,
+      PMPM_ELIGIBLE INTEGER DEFAULT 0,
+      ANCHOR INTEGER DEFAULT 0,
+      FAMILY_ELIGIBLE INTEGER DEFAULT 0,
+      ELIGIBLE INTEGER DEFAULT 0,
       CREATED_AT TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
     )
   `);
+
+  // Add columns if they don't exist (for existing tables)
+  for (const col of ["PMPM_ELIGIBLE", "ANCHOR", "FAMILY_ELIGIBLE", "ELIGIBLE"]) {
+    try {
+      await execStatement(conn, `ALTER TABLE MEMBERS ADD COLUMN ${col} INTEGER DEFAULT 0`);
+    } catch {
+      // Column already exists
+    }
+  }
 
   await execStatement(conn, `
     CREATE TABLE IF NOT EXISTS SETTINGS (
