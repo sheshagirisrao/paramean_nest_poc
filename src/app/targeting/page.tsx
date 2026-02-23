@@ -305,103 +305,106 @@ export default function TargetingPage() {
                 </div>
               </div>
 
-              <div className="px-8 py-8">
-                <div className="flex flex-col items-center">
-                  {funnel.map((step, i) => {
-                    const widthPct = startTotal > 0 ? Math.max(12, (step.total / startTotal) * 100) : 100;
-                    const isStart = i === 0;
-                    const isFinal = i === funnel.length - 1;
-                    const opacity = isStart ? 1 : isFinal ? 1 : 0.55 + (0.45 * (1 - i / funnel.length));
+              <div className="px-6 py-6 space-y-0">
+                {funnel.map((step, i) => {
+                  const isStart = i === 0;
+                  const isFinal = i === funnel.length - 1;
+                  const retainedPct = startTotal > 0 ? (step.total / startTotal) * 100 : 100;
 
-                    return (
-                      <div key={i} className="w-full flex flex-col items-center">
-                        {/* Connector arrow between steps */}
-                        {i > 0 && (
-                          <div className="flex flex-col items-center -my-1 z-10">
-                            <div className="w-px h-3 bg-[#C2CCE3]" />
-                            <div className="flex items-center gap-2">
-                              <div className="bg-red-50 border border-red-200 rounded-full px-2.5 py-0.5">
-                                <span className="text-[10px] font-semibold text-red-500">-{fmt(step.excluded)}</span>
-                              </div>
-                            </div>
-                            <div className="w-px h-3 bg-[#C2CCE3]" />
-                          </div>
-                        )}
-
-                        {/* Funnel segment */}
-                        <div className="relative group w-full flex items-center justify-center">
-                          {/* Left label */}
-                          <div className="absolute left-0 flex items-center gap-2 pr-4" style={{ width: "calc(50% - " + (widthPct / 2) + "%)" }}>
-                            <div className="ml-auto flex items-center gap-2">
-                              {!isStart && (
-                                <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${isFinal ? "bg-emerald-50 text-emerald-600" : "bg-[#5A3A76]/5 text-[#5A3A76]"}`}>
-                                  {pct(step.total / startTotal)}
-                                </span>
-                              )}
-                              <span className={`text-xs font-medium whitespace-nowrap ${isStart ? "text-[#1A2534] font-semibold" : isFinal ? "text-emerald-700 font-semibold" : "text-[#4B5563]"}`}>
-                                {isStart ? step.name : `${i}. ${step.name}`}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Trapezoid bar */}
-                          <div
-                            className="relative overflow-hidden transition-all duration-300"
-                            style={{ width: `${widthPct}%`, height: isStart || isFinal ? "52px" : "44px" }}
-                          >
-                            <svg viewBox="0 0 100 10" preserveAspectRatio="none" className="w-full h-full">
-                              <defs>
-                                {isFinal ? (
-                                  <linearGradient id={`grad-${i}`} x1="0" y1="0" x2="1" y2="0">
-                                    <stop offset="0%" stopColor="#059669" />
-                                    <stop offset="100%" stopColor="#34d399" />
-                                  </linearGradient>
-                                ) : (
-                                  <linearGradient id={`grad-${i}`} x1="0" y1="0" x2="1" y2="0">
-                                    <stop offset="0%" stopColor="#5A3A76" stopOpacity={opacity} />
-                                    <stop offset="100%" stopColor="#8D5EAD" stopOpacity={opacity} />
-                                  </linearGradient>
-                                )}
-                              </defs>
-                              {(() => {
-                                const nextWidthPct = i < funnel.length - 1
-                                  ? Math.max(12, (funnel[i + 1].total / startTotal) * 100)
-                                  : widthPct;
-                                const inset = ((widthPct - nextWidthPct) / widthPct) * 50;
-                                const botL = isFinal ? 0 : inset;
-                                const botR = isFinal ? 100 : 100 - inset;
-                                return (
-                                  <polygon
-                                    points={`0,0 100,0 ${botR},10 ${botL},10`}
-                                    fill={`url(#grad-${i})`}
-                                  />
-                                );
-                              })()}
+                  return (
+                    <div key={i}>
+                      {/* Connector */}
+                      {i > 0 && (
+                        <div className="flex items-center py-1.5 pl-7">
+                          <div className="flex items-center gap-2">
+                            <svg className="w-3.5 h-3.5 text-[#C2CCE3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
                             </svg>
-                            {/* Centered text on bar */}
+                            <span className="text-[10px] font-semibold text-red-500 bg-red-50 border border-red-100 rounded px-1.5 py-0.5">
+                              &minus;{fmt(step.excluded)}
+                            </span>
+                            <span className="text-[10px] text-[#7C89A6]">removed</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Row */}
+                      <div className={`flex items-center gap-4 rounded-xl px-4 py-3 transition-all ${
+                        isFinal ? "bg-emerald-50 border border-emerald-200" :
+                        isStart ? "bg-[#5A3A76]/[0.03] border border-[#E8E0F0]" :
+                        "hover:bg-[#F7F5FA] border border-transparent"
+                      }`}>
+                        {/* Step number */}
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                          isFinal ? "bg-emerald-500 text-white" :
+                          isStart ? "bg-[#5A3A76] text-white" :
+                          "bg-[#5A3A76]/10 text-[#5A3A76]"
+                        }`}>
+                          {isStart ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" /></svg>
+                          : isFinal ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          : i}
+                        </div>
+
+                        {/* Label */}
+                        <div className="w-52 shrink-0">
+                          <p className={`text-sm font-semibold leading-tight ${
+                            isFinal ? "text-emerald-700" : isStart ? "text-[#1A2534]" : "text-[#4B5563]"
+                          }`}>
+                            {step.name}
+                          </p>
+                          {!isStart && (
+                            <p className="text-[10px] text-[#7C89A6] mt-0.5">{pct(step.cumulExclPct)} cumulative exclusion</p>
+                          )}
+                        </div>
+
+                        {/* Progress bar */}
+                        <div className="flex-1 min-w-0">
+                          <div className="h-7 rounded-md bg-[#F0EBF5] overflow-hidden relative">
+                            <div
+                              className={`h-full rounded-md transition-all duration-500 ${
+                                isFinal ? "bg-gradient-to-r from-emerald-500 to-emerald-400" :
+                                isStart ? "bg-gradient-to-r from-[#5A3A76] to-[#8D5EAD]" :
+                                "bg-gradient-to-r from-[#5A3A76]/60 to-[#8D5EAD]/60"
+                              }`}
+                              style={{ width: `${Math.max(3, retainedPct)}%` }}
+                            />
                             <div className="absolute inset-0 flex items-center justify-center">
-                              <span className={`font-bold text-white drop-shadow-sm ${isStart || isFinal ? "text-sm" : "text-xs"}`}>
+                              <span className={`text-[11px] font-bold drop-shadow-sm ${
+                                retainedPct > 30 ? "text-white" : isFinal ? "text-emerald-700" : "text-[#5A3A76]"
+                              }`}>
                                 {fmt(step.total)}
                               </span>
                             </div>
                           </div>
+                        </div>
 
-                          {/* Right label */}
-                          <div className="absolute right-0 flex items-center gap-2 pl-4" style={{ width: "calc(50% - " + (widthPct / 2) + "%)" }}>
-                            <div className="flex items-center gap-2 text-xs">
-                              <span className="text-[#7C89A6] font-mono whitespace-nowrap">A: {fmt(step.adults)}</span>
-                              <span className="text-[#7C89A6] font-mono whitespace-nowrap">C: {fmt(step.children)}</span>
-                            </div>
+                        {/* Stats */}
+                        <div className="flex items-center gap-3 shrink-0 w-56">
+                          <div className="text-center">
+                            <p className="text-[9px] font-semibold text-[#7C89A6] uppercase">Adults</p>
+                            <p className={`text-sm font-bold font-mono ${isFinal ? "text-emerald-700" : "text-[#1A2534]"}`}>{fmt(step.adults)}</p>
+                          </div>
+                          <div className="w-px h-8 bg-[#E8E0F0]" />
+                          <div className="text-center">
+                            <p className="text-[9px] font-semibold text-[#7C89A6] uppercase">Children</p>
+                            <p className={`text-sm font-bold font-mono ${isFinal ? "text-emerald-700" : "text-[#1A2534]"}`}>{fmt(step.children)}</p>
+                          </div>
+                          <div className="w-px h-8 bg-[#E8E0F0]" />
+                          <div className="text-center">
+                            <p className="text-[9px] font-semibold text-[#7C89A6] uppercase">Retained</p>
+                            <p className={`text-sm font-bold font-mono ${
+                              isFinal ? "text-emerald-600" : isStart ? "text-[#5A3A76]" : "text-[#4B5563]"
+                            }`}>{isStart ? "100%" : pct(step.total / startTotal)}</p>
                           </div>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })}
 
                 {/* Reduction summary */}
                 {finalStep && (
-                  <div className="mt-6 flex items-center justify-center gap-6">
+                  <div className="mt-5 flex items-center justify-center gap-6">
                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#E8E0F0] to-transparent" />
                     <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-full px-5 py-2">
                       <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -557,9 +560,9 @@ export default function TargetingPage() {
                             </tr>
                             <tr className="border-t border-[#F0EBF5]">
                               <td className="py-3 text-sm text-[#4B5563]">Total Non-Anchors</td>
-                              <td className="py-3 text-center font-mono text-sm">{fmt(bfd.totalNonAnchorsAdults)}</td>
-                              <td className="py-3 text-center font-mono text-sm">{fmt(bfd.totalNonAnchorsChildren)}</td>
-                              <td className="py-3 text-center font-mono text-sm">{fmt(bfd.totalNonAnchorsAdults + bfd.totalNonAnchorsChildren)}</td>
+                              <td className="py-3 text-center font-mono text-sm font-semibold text-[#1A2534]">{fmt(bfd.totalNonAnchorsAdults)}</td>
+                              <td className="py-3 text-center font-mono text-sm font-semibold text-[#1A2534]">{fmt(bfd.totalNonAnchorsChildren)}</td>
+                              <td className="py-3 text-center font-mono text-sm font-bold text-[#1A2534]">{fmt(bfd.totalNonAnchorsAdults + bfd.totalNonAnchorsChildren)}</td>
                             </tr>
                             <tr className="border-t-2 border-[#5A3A76]/20">
                               <td className="py-3 text-sm font-bold text-[#1A2534]">Total Nest Members</td>
@@ -600,9 +603,9 @@ export default function TargetingPage() {
                             </tr>
                             <tr className="border-t border-emerald-100">
                               <td className="py-3 text-sm text-[#4B5563]">Total Non-Anchors</td>
-                              <td className="py-3 text-center font-mono text-sm">{fmt(afd.totalNonAnchorsAdults)}</td>
-                              <td className="py-3 text-center font-mono text-sm">{fmt(afd.totalNonAnchorsChildren)}</td>
-                              <td className="py-3 text-center font-mono text-sm">{fmt(afd.totalNonAnchorsAdults + afd.totalNonAnchorsChildren)}</td>
+                              <td className="py-3 text-center font-mono text-sm font-semibold text-emerald-700">{fmt(afd.totalNonAnchorsAdults)}</td>
+                              <td className="py-3 text-center font-mono text-sm font-semibold text-emerald-700">{fmt(afd.totalNonAnchorsChildren)}</td>
+                              <td className="py-3 text-center font-mono text-sm font-bold text-emerald-800">{fmt(afd.totalNonAnchorsAdults + afd.totalNonAnchorsChildren)}</td>
                             </tr>
                             <tr className="border-t-2 border-emerald-300">
                               <td className="py-3 text-sm font-bold text-emerald-800">Total Nest Members</td>
