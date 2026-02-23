@@ -429,45 +429,45 @@ export default function TargetingPage() {
                 <h2 className="text-base font-semibold text-[#1A2534]">Detailed Funnel Breakdown</h2>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-xs">
+                <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-[#E8E0F0]">
-                      <th className="px-4 py-3 text-left font-semibold text-[#7C89A6] uppercase">Step</th>
-                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Adults</th>
-                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Children</th>
-                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Total</th>
-                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Excluded</th>
-                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Excl %</th>
-                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Cumul Excl %</th>
-                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Adult MM</th>
-                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Child MM</th>
-                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Adult PMPM</th>
-                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Child PMPM</th>
-                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Adult Paid</th>
-                      <th className="px-4 py-3 text-center font-semibold text-[#7C89A6] uppercase">Child Paid</th>
+                    <tr className="border-b-2 border-[#5A3A76]/20 bg-[#F7F5FA]">
+                      <th className="px-4 py-3 text-left font-bold text-[#1A2534] uppercase text-xs tracking-wide">Step</th>
+                      <th className="px-4 py-3 text-center font-bold text-[#1A2534] uppercase text-xs tracking-wide">Adults</th>
+                      <th className="px-4 py-3 text-center font-bold text-[#1A2534] uppercase text-xs tracking-wide">Children</th>
+                      <th className="px-4 py-3 text-center font-bold text-[#1A2534] uppercase text-xs tracking-wide">Total</th>
+                      <th className="px-4 py-3 text-center font-bold text-[#1A2534] uppercase text-xs tracking-wide">Excluded</th>
+                      <th className="px-4 py-3 text-center font-bold text-[#1A2534] uppercase text-xs tracking-wide">Excl %</th>
+                      <th className="px-4 py-3 text-center font-bold text-[#1A2534] uppercase text-xs tracking-wide">Cumul Excl %</th>
+                      <th className="px-4 py-3 text-center font-bold text-[#1A2534] uppercase text-xs tracking-wide">Adult MM</th>
+                      <th className="px-4 py-3 text-center font-bold text-[#1A2534] uppercase text-xs tracking-wide">Child MM</th>
+                      <th className="px-4 py-3 text-center font-bold text-[#1A2534] uppercase text-xs tracking-wide">Adult PMPM</th>
+                      <th className="px-4 py-3 text-center font-bold text-[#1A2534] uppercase text-xs tracking-wide">Child PMPM</th>
+                      <th className="px-4 py-3 text-center font-bold text-[#1A2534] uppercase text-xs tracking-wide">Adult Paid</th>
+                      <th className="px-4 py-3 text-center font-bold text-[#1A2534] uppercase text-xs tracking-wide">Child Paid</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#F0EBF5]">
+                  <tbody className="divide-y divide-[#E8E0F0]">
                     {funnel.map((step, i) => {
                       const isStart = i === 0;
                       const isFinal = i === funnel.length - 1;
                       return (
-                        <tr key={i} className={isFinal ? "bg-emerald-50/50" : isStart ? "bg-[#5A3A76]/[0.02]" : "hover:bg-[#5A3A76]/[0.01]"}>
-                          <td className={`px-4 py-2.5 font-medium whitespace-nowrap ${isFinal ? "text-emerald-700" : "text-[#1A2534]"}`}>
+                        <tr key={i} className={isFinal ? "bg-emerald-50" : isStart ? "bg-[#5A3A76]/[0.03]" : "hover:bg-[#F7F5FA]"}>
+                          <td className={`px-4 py-3 font-semibold whitespace-nowrap ${isFinal ? "text-emerald-700" : "text-[#1A2534]"}`}>
                             {isStart ? step.name : `${i}. ${step.name}`}
                           </td>
-                          <td className="px-4 py-2.5 text-center font-mono">{fmt(step.adults)}</td>
-                          <td className="px-4 py-2.5 text-center font-mono">{fmt(step.children)}</td>
-                          <td className={`px-4 py-2.5 text-center font-mono font-bold ${isFinal ? "text-emerald-700" : ""}`}>{fmt(step.total)}</td>
-                          <td className="px-4 py-2.5 text-center font-mono text-red-500">{isStart ? "—" : `-${fmt(step.excluded)}`}</td>
-                          <td className="px-4 py-2.5 text-center">{isStart ? "—" : pct(step.excludedPct)}</td>
-                          <td className="px-4 py-2.5 text-center">{isStart ? "—" : pct(step.cumulExclPct)}</td>
-                          <td className="px-4 py-2.5 text-center font-mono">{fmt(step.adultMM)}</td>
-                          <td className="px-4 py-2.5 text-center font-mono">{fmt(step.childMM)}</td>
-                          <td className="px-4 py-2.5 text-center font-mono">{fmtCurrency(step.adultPmpm, 2)}</td>
-                          <td className="px-4 py-2.5 text-center font-mono">{fmtCurrency(step.childPmpm, 2)}</td>
-                          <td className="px-4 py-2.5 text-center font-mono">{fmtCurrency(step.adultPaid)}</td>
-                          <td className="px-4 py-2.5 text-center font-mono">{fmtCurrency(step.childPaid)}</td>
+                          <td className="px-4 py-3 text-center font-mono text-[#1A2534] font-medium">{fmt(step.adults)}</td>
+                          <td className="px-4 py-3 text-center font-mono text-[#1A2534] font-medium">{fmt(step.children)}</td>
+                          <td className={`px-4 py-3 text-center font-mono font-bold ${isFinal ? "text-emerald-700" : "text-[#1A2534]"}`}>{fmt(step.total)}</td>
+                          <td className="px-4 py-3 text-center font-mono font-bold text-red-600">{isStart ? "—" : `-${fmt(step.excluded)}`}</td>
+                          <td className="px-4 py-3 text-center text-[#1A2534] font-medium">{isStart ? "—" : pct(step.excludedPct)}</td>
+                          <td className="px-4 py-3 text-center text-[#1A2534] font-medium">{isStart ? "—" : pct(step.cumulExclPct)}</td>
+                          <td className="px-4 py-3 text-center font-mono text-[#1A2534]">{fmt(step.adultMM)}</td>
+                          <td className="px-4 py-3 text-center font-mono text-[#1A2534]">{fmt(step.childMM)}</td>
+                          <td className="px-4 py-3 text-center font-mono text-[#1A2534]">{fmtCurrency(step.adultPmpm, 2)}</td>
+                          <td className="px-4 py-3 text-center font-mono text-[#1A2534]">{fmtCurrency(step.childPmpm, 2)}</td>
+                          <td className="px-4 py-3 text-center font-mono text-[#1A2534]">{fmtCurrency(step.adultPaid)}</td>
+                          <td className="px-4 py-3 text-center font-mono text-[#1A2534]">{fmtCurrency(step.childPaid)}</td>
                         </tr>
                       );
                     })}
