@@ -473,116 +473,207 @@ export default function TargetingPage() {
               </div>
             </div>
 
-            {/* Output Table */}
-            {outputTable && (
-              <div className="bg-white rounded-xl shadow-sm border border-[#E8E0F0] overflow-hidden">
-                <div className="px-6 py-4 bg-gradient-to-r from-[#5A3A76]/5 to-[#8D5EAD]/5 border-b border-[#E8E0F0]">
-                  <h2 className="text-base font-semibold text-[#1A2534]">Output Table</h2>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-[#E8E0F0]">
-                        <th className="px-6 py-3 text-left font-semibold text-[#7C89A6] uppercase text-xs tracking-wider w-80"></th>
-                        <th className="px-6 py-3 text-center font-semibold text-[#7C89A6] uppercase text-xs tracking-wider">Adults</th>
-                        <th className="px-6 py-3 text-center font-semibold text-[#7C89A6] uppercase text-xs tracking-wider">Children</th>
-                        <th className="px-6 py-3 text-center font-semibold text-[#7C89A6] uppercase text-xs tracking-wider">All</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {/* Before Family Definition */}
-                      <tr className="bg-[#5A3A76]/[0.04]">
-                        <td colSpan={4} className="px-6 py-2.5 font-bold text-[#1A2534] text-sm">Before Family Definition</td>
-                      </tr>
-                      <tr className="border-b border-[#F0EBF5]">
-                        <td className="px-6 py-2 text-[#4B5563] pl-10">Total Anchors</td>
-                        <td className="px-6 py-2 text-center font-mono text-[#5A3A76] font-semibold">{fmt(outputTable.beforeFamilyDef.totalAnchorsAdults)}</td>
-                        <td className="px-6 py-2 text-center font-mono text-[#5A3A76] font-semibold">{fmt(outputTable.beforeFamilyDef.totalAnchorsChildren)}</td>
-                        <td className="px-6 py-2 text-center font-mono font-semibold">{fmt(outputTable.beforeFamilyDef.totalAnchorsAdults + outputTable.beforeFamilyDef.totalAnchorsChildren)}</td>
-                      </tr>
-                      <tr className="border-b border-[#F0EBF5]">
-                        <td className="px-6 py-2 text-[#4B5563] pl-10">Total Non-Anchors</td>
-                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.beforeFamilyDef.totalNonAnchorsAdults)}</td>
-                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.beforeFamilyDef.totalNonAnchorsChildren)}</td>
-                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.beforeFamilyDef.totalNonAnchorsAdults + outputTable.beforeFamilyDef.totalNonAnchorsChildren)}</td>
-                      </tr>
-                      <tr className="border-b-2 border-[#E8E0F0] bg-[#5A3A76]/[0.02]">
-                        <td className="px-6 py-2.5 font-bold text-[#1A2534]">Total Nest Members</td>
-                        <td className="px-6 py-2.5 text-center font-mono font-bold text-[#1A2534]">{fmt(outputTable.beforeFamilyDef.totalNestAdults)}</td>
-                        <td className="px-6 py-2.5 text-center font-mono font-bold text-[#1A2534]">{fmt(outputTable.beforeFamilyDef.totalNestChildren)}</td>
-                        <td className="px-6 py-2.5 text-center font-mono font-bold text-[#1A2534]">{fmt(outputTable.beforeFamilyDef.totalNestAdults + outputTable.beforeFamilyDef.totalNestChildren)}</td>
-                      </tr>
+            {/* Executive Output Summary */}
+            {outputTable && (() => {
+              const bfd = outputTable.beforeFamilyDef;
+              const fd = outputTable.familyDefinition;
+              const afd = outputTable.afterFamilyDef;
+              const beforeTotal = bfd.totalNestAdults + bfd.totalNestChildren;
+              const afterTotal = afd.totalNestAdults + afd.totalNestChildren;
+              const afterAnchors = afd.totalAnchorsAdults + afd.totalAnchorsChildren;
+              const afterNonAnchors = (afd.totalNonAnchorsAdults + afd.totalNonAnchorsChildren);
+              const reductionFromStart = startTotal > 0 ? ((startTotal - afterTotal) / startTotal) : 0;
 
-                      {/* Family Definition Details */}
-                      <tr><td colSpan={4} className="py-2"></td></tr>
-                      <tr className="border-b border-[#F0EBF5]">
-                        <td className="px-6 py-2 text-[#4B5563] pl-10">Adult Anchor w HRP (&gt;1)</td>
-                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.familyDefinition.adultAnchorHrp)}</td>
-                        <td className="px-6 py-2 text-center font-mono">0</td>
-                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.familyDefinition.adultAnchorHrp)}</td>
-                      </tr>
-                      <tr className="border-b border-[#F0EBF5]">
-                        <td className="px-6 py-2 text-[#4B5563] pl-10">Child Anchor (&gt;1)</td>
-                        <td className="px-6 py-2 text-center font-mono">0</td>
-                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.familyDefinition.childAnchor)}</td>
-                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.familyDefinition.childAnchor)}</td>
-                      </tr>
-                      <tr className="border-b border-[#F0EBF5]">
-                        <td className="px-6 py-2 text-[#4B5563] pl-10">Other Adult Anchor (&gt;2)</td>
-                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.familyDefinition.otherAdultGt2)}</td>
-                        <td className="px-6 py-2 text-center font-mono">0</td>
-                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.familyDefinition.otherAdultGt2)}</td>
-                      </tr>
-                      <tr className="border-b border-[#F0EBF5]">
-                        <td className="px-6 py-2 text-[#4B5563] pl-10">Other Adult Anchor (1) Excluded</td>
-                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.familyDefinition.adultSingleExcl)}</td>
-                        <td className="px-6 py-2 text-center font-mono">0</td>
-                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.familyDefinition.adultSingleExcl)}</td>
-                      </tr>
-                      <tr className="border-b border-[#F0EBF5] bg-red-50/50">
-                        <td className="px-6 py-2 text-red-600 font-medium pl-16">Family Definition (Anchors Lost)</td>
-                        <td className="px-6 py-2 text-center font-mono text-red-600 font-semibold">{fmt(outputTable.familyDefinition.anchorsLostAdults)}</td>
-                        <td className="px-6 py-2 text-center font-mono text-red-600">{fmt(outputTable.familyDefinition.anchorsLostChildren)}</td>
-                        <td className="px-6 py-2 text-center font-mono text-red-600 font-semibold">
-                          {fmt(outputTable.familyDefinition.anchorsLostAdults + outputTable.familyDefinition.anchorsLostChildren)}
-                          <span className="ml-2 text-xs">({pct(outputTable.familyDefinition.anchorsLostPct)} of Anchors Lost)</span>
-                        </td>
-                      </tr>
-                      <tr className="border-b-2 border-[#E8E0F0]">
-                        <td className="px-6 py-2 text-[#4B5563] italic pl-16">Remaining</td>
-                        <td className="px-6 py-2 text-center font-mono italic">{fmt(outputTable.familyDefinition.remainingAdults)}</td>
-                        <td className="px-6 py-2 text-center font-mono italic">{fmt(outputTable.familyDefinition.remainingChildren)}</td>
-                        <td className="px-6 py-2 text-center font-mono italic">{fmt(outputTable.familyDefinition.remainingAdults + outputTable.familyDefinition.remainingChildren)}</td>
-                      </tr>
+              return (
+                <div className="space-y-6">
+                  {/* Hero banner */}
+                  <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-[#1A2534] via-[#2A1F3D] to-[#5A3A76] shadow-lg">
+                    <div className="absolute inset-0 opacity-10">
+                      <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full -translate-y-48 translate-x-48" />
+                      <div className="absolute bottom-0 left-0 w-64 h-64 bg-white rounded-full translate-y-32 -translate-x-32" />
+                    </div>
+                    <div className="relative px-8 py-8">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center">
+                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h2 className="text-lg font-bold text-white">Nest Population Output</h2>
+                          <p className="text-xs text-white/50">Executive Summary &mdash; Final targeting results after all criteria and family definition</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-white/10 backdrop-blur rounded-xl p-4 border border-white/10">
+                          <p className="text-[10px] font-semibold text-white/50 uppercase tracking-widest mb-1">Starting Population</p>
+                          <p className="text-2xl font-bold text-white/80">{fmt(startTotal)}</p>
+                        </div>
+                        <div className="bg-white/10 backdrop-blur rounded-xl p-4 border border-white/10">
+                          <p className="text-[10px] font-semibold text-emerald-300/80 uppercase tracking-widest mb-1">Final Nest Members</p>
+                          <p className="text-3xl font-black text-white">{fmt(afterTotal)}</p>
+                          <p className="text-xs text-emerald-300/70 mt-0.5">{pct(reductionFromStart)} reduction</p>
+                        </div>
+                        <div className="bg-white/10 backdrop-blur rounded-xl p-4 border border-white/10">
+                          <p className="text-[10px] font-semibold text-white/50 uppercase tracking-widest mb-1">Total Anchors</p>
+                          <p className="text-2xl font-bold text-white">{fmt(afterAnchors)}</p>
+                          <p className="text-xs text-white/40 mt-0.5">Qualified members</p>
+                        </div>
+                        <div className="bg-white/10 backdrop-blur rounded-xl p-4 border border-white/10">
+                          <p className="text-[10px] font-semibold text-white/50 uppercase tracking-widest mb-1">Non-Anchors</p>
+                          <p className="text-2xl font-bold text-white">{fmt(afterNonAnchors)}</p>
+                          <p className="text-xs text-white/40 mt-0.5">Household members</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-                      {/* After Family Definition */}
-                      <tr><td colSpan={4} className="py-2"></td></tr>
-                      <tr className="bg-[#5A3A76]/[0.04]">
-                        <td colSpan={4} className="px-6 py-2.5 font-bold text-[#1A2534] text-sm">After Family Definition</td>
-                      </tr>
-                      <tr className="border-b border-[#F0EBF5]">
-                        <td className="px-6 py-2 text-[#4B5563] pl-10 font-semibold">Total Anchors</td>
-                        <td className="px-6 py-2 text-center font-mono text-[#5A3A76] font-semibold">{fmt(outputTable.afterFamilyDef.totalAnchorsAdults)}</td>
-                        <td className="px-6 py-2 text-center font-mono text-[#5A3A76] font-semibold">{fmt(outputTable.afterFamilyDef.totalAnchorsChildren)}</td>
-                        <td className="px-6 py-2 text-center font-mono font-semibold">{fmt(outputTable.afterFamilyDef.totalAnchorsAdults + outputTable.afterFamilyDef.totalAnchorsChildren)}</td>
-                      </tr>
-                      <tr className="border-b border-[#F0EBF5]">
-                        <td className="px-6 py-2 text-[#4B5563] pl-10 font-semibold">Total Non-Anchors</td>
-                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.afterFamilyDef.totalNonAnchorsAdults)}</td>
-                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.afterFamilyDef.totalNonAnchorsChildren)}</td>
-                        <td className="px-6 py-2 text-center font-mono">{fmt(outputTable.afterFamilyDef.totalNonAnchorsAdults + outputTable.afterFamilyDef.totalNonAnchorsChildren)}</td>
-                      </tr>
-                      <tr className="bg-emerald-50/70 border-t-2 border-emerald-200">
-                        <td className="px-6 py-3 font-bold text-emerald-700 text-sm">Total Nest Members</td>
-                        <td className="px-6 py-3 text-center font-mono font-bold text-emerald-700 text-base">{fmt(outputTable.afterFamilyDef.totalNestAdults)}</td>
-                        <td className="px-6 py-3 text-center font-mono font-bold text-emerald-700 text-base">{fmt(outputTable.afterFamilyDef.totalNestChildren)}</td>
-                        <td className="px-6 py-3 text-center font-mono font-bold text-emerald-700 text-base">{fmt(outputTable.afterFamilyDef.totalNestAdults + outputTable.afterFamilyDef.totalNestChildren)}</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  {/* Before vs After comparison panels */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Before Family Definition */}
+                    <div className="bg-white rounded-xl shadow-sm border border-[#E8E0F0] overflow-hidden">
+                      <div className="px-6 py-4 bg-gradient-to-r from-[#5A3A76]/5 to-[#8D5EAD]/5 border-b border-[#E8E0F0]">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-[#8D5EAD]" />
+                          <h3 className="text-sm font-bold text-[#1A2534]">Before Family Definition</h3>
+                        </div>
+                      </div>
+                      <div className="p-6">
+                        <table className="w-full">
+                          <thead>
+                            <tr>
+                              <th className="pb-3 text-left text-[10px] font-semibold text-[#7C89A6] uppercase tracking-widest"></th>
+                              <th className="pb-3 text-center text-[10px] font-semibold text-[#7C89A6] uppercase tracking-widest">Adults</th>
+                              <th className="pb-3 text-center text-[10px] font-semibold text-[#7C89A6] uppercase tracking-widest">Children</th>
+                              <th className="pb-3 text-center text-[10px] font-semibold text-[#7C89A6] uppercase tracking-widest">All</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className="border-t border-[#F0EBF5]">
+                              <td className="py-3 text-sm text-[#4B5563]">Total Anchors</td>
+                              <td className="py-3 text-center font-mono text-sm font-semibold text-[#5A3A76]">{fmt(bfd.totalAnchorsAdults)}</td>
+                              <td className="py-3 text-center font-mono text-sm font-semibold text-[#5A3A76]">{fmt(bfd.totalAnchorsChildren)}</td>
+                              <td className="py-3 text-center font-mono text-sm font-bold">{fmt(bfd.totalAnchorsAdults + bfd.totalAnchorsChildren)}</td>
+                            </tr>
+                            <tr className="border-t border-[#F0EBF5]">
+                              <td className="py-3 text-sm text-[#4B5563]">Total Non-Anchors</td>
+                              <td className="py-3 text-center font-mono text-sm">{fmt(bfd.totalNonAnchorsAdults)}</td>
+                              <td className="py-3 text-center font-mono text-sm">{fmt(bfd.totalNonAnchorsChildren)}</td>
+                              <td className="py-3 text-center font-mono text-sm">{fmt(bfd.totalNonAnchorsAdults + bfd.totalNonAnchorsChildren)}</td>
+                            </tr>
+                            <tr className="border-t-2 border-[#5A3A76]/20">
+                              <td className="py-3 text-sm font-bold text-[#1A2534]">Total Nest Members</td>
+                              <td className="py-3 text-center font-mono text-base font-bold text-[#1A2534]">{fmt(bfd.totalNestAdults)}</td>
+                              <td className="py-3 text-center font-mono text-base font-bold text-[#1A2534]">{fmt(bfd.totalNestChildren)}</td>
+                              <td className="py-3 text-center font-mono text-base font-black text-[#5A3A76]">{fmt(beforeTotal)}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* After Family Definition */}
+                    <div className="bg-white rounded-xl shadow-sm border-2 border-emerald-200 overflow-hidden">
+                      <div className="px-6 py-4 bg-gradient-to-r from-emerald-50 to-emerald-100/50 border-b border-emerald-200">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                          <h3 className="text-sm font-bold text-emerald-800">After Family Definition</h3>
+                          <span className="ml-auto text-[10px] font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full uppercase tracking-wider">Final</span>
+                        </div>
+                      </div>
+                      <div className="p-6">
+                        <table className="w-full">
+                          <thead>
+                            <tr>
+                              <th className="pb-3 text-left text-[10px] font-semibold text-[#7C89A6] uppercase tracking-widest"></th>
+                              <th className="pb-3 text-center text-[10px] font-semibold text-[#7C89A6] uppercase tracking-widest">Adults</th>
+                              <th className="pb-3 text-center text-[10px] font-semibold text-[#7C89A6] uppercase tracking-widest">Children</th>
+                              <th className="pb-3 text-center text-[10px] font-semibold text-[#7C89A6] uppercase tracking-widest">All</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className="border-t border-emerald-100">
+                              <td className="py-3 text-sm text-[#4B5563]">Total Anchors</td>
+                              <td className="py-3 text-center font-mono text-sm font-semibold text-emerald-700">{fmt(afd.totalAnchorsAdults)}</td>
+                              <td className="py-3 text-center font-mono text-sm font-semibold text-emerald-700">{fmt(afd.totalAnchorsChildren)}</td>
+                              <td className="py-3 text-center font-mono text-sm font-bold">{fmt(afd.totalAnchorsAdults + afd.totalAnchorsChildren)}</td>
+                            </tr>
+                            <tr className="border-t border-emerald-100">
+                              <td className="py-3 text-sm text-[#4B5563]">Total Non-Anchors</td>
+                              <td className="py-3 text-center font-mono text-sm">{fmt(afd.totalNonAnchorsAdults)}</td>
+                              <td className="py-3 text-center font-mono text-sm">{fmt(afd.totalNonAnchorsChildren)}</td>
+                              <td className="py-3 text-center font-mono text-sm">{fmt(afd.totalNonAnchorsAdults + afd.totalNonAnchorsChildren)}</td>
+                            </tr>
+                            <tr className="border-t-2 border-emerald-300">
+                              <td className="py-3 text-sm font-bold text-emerald-800">Total Nest Members</td>
+                              <td className="py-3 text-center font-mono text-lg font-bold text-emerald-700">{fmt(afd.totalNestAdults)}</td>
+                              <td className="py-3 text-center font-mono text-lg font-bold text-emerald-700">{fmt(afd.totalNestChildren)}</td>
+                              <td className="py-3 text-center font-mono text-lg font-black text-emerald-700">{fmt(afterTotal)}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Family Definition Impact */}
+                  <div className="bg-white rounded-xl shadow-sm border border-[#E8E0F0] overflow-hidden">
+                    <div className="px-6 py-4 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200/50">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-amber-900">Family Definition Impact</h3>
+                          <p className="text-xs text-amber-700/60">Household-level adjustments applied to anchor population</p>
+                        </div>
+                        <div className="ml-auto bg-red-50 border border-red-200 rounded-lg px-3 py-1.5">
+                          <span className="text-xs font-bold text-red-600">{fmt(fd.anchorsLostAdults + fd.anchorsLostChildren)} anchors lost</span>
+                          <span className="text-xs text-red-400 ml-1">({pct(fd.anchorsLostPct)})</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-6">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div className="rounded-lg border border-[#E8E0F0] p-4 text-center">
+                          <p className="text-[10px] font-semibold text-[#7C89A6] uppercase tracking-widest mb-2">Adult Anchor w HRP (&gt;1)</p>
+                          <p className="text-xl font-bold text-[#1A2534]">{fmt(fd.adultAnchorHrp)}</p>
+                          <p className="text-[10px] text-[#7C89A6] mt-1">Multi-member households</p>
+                        </div>
+                        <div className="rounded-lg border border-[#E8E0F0] p-4 text-center">
+                          <p className="text-[10px] font-semibold text-[#7C89A6] uppercase tracking-widest mb-2">Child Anchor (&gt;1)</p>
+                          <p className="text-xl font-bold text-[#1A2534]">{fmt(fd.childAnchor)}</p>
+                          <p className="text-[10px] text-[#7C89A6] mt-1">Qualifying children</p>
+                        </div>
+                        <div className="rounded-lg border border-[#E8E0F0] p-4 text-center">
+                          <p className="text-[10px] font-semibold text-[#7C89A6] uppercase tracking-widest mb-2">Other Adult (&gt;2)</p>
+                          <p className="text-xl font-bold text-[#1A2534]">{fmt(fd.otherAdultGt2)}</p>
+                          <p className="text-[10px] text-[#7C89A6] mt-1">Multiple-adult households</p>
+                        </div>
+                        <div className="rounded-lg border border-red-200 bg-red-50/50 p-4 text-center">
+                          <p className="text-[10px] font-semibold text-red-500 uppercase tracking-widest mb-2">Single Adult Excluded</p>
+                          <p className="text-xl font-bold text-red-600">{fmt(fd.adultSingleExcl)}</p>
+                          <p className="text-[10px] text-red-400 mt-1">Single-member households</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1 h-2.5 rounded-full bg-[#F0EBF5] overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-[#5A3A76] to-emerald-500 transition-all"
+                            style={{ width: `${100 - (fd.anchorsLostPct * 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-semibold text-[#5A3A76] whitespace-nowrap">
+                          {pct(1 - fd.anchorsLostPct)} retained
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </>
         )}
 
